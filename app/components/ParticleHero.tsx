@@ -2,9 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { feature, mesh } from "topojson-client";
-import type { Objects, Topology } from "topojson-specification";
-import worldAtlas from "world-atlas/countries-50m.json";
 
 const FIELD = {
   particleCount: 10000,
@@ -25,155 +22,8 @@ const FIELD = {
   maxPixelRatio: 2,
 };
 
-const SHAPE_DETAILS = [
-  {
-    eyebrow: "01",
-    label: "home",
-    title: (
-      <>
-        Data systems built
-        <br />
-        for growth, not just launch day.
-      </>
-    ),
-    copy: "Data Power Analytics helps ambitious teams turn scattered information into decisions, operating rhythm, and measurable growth.",
-    count: "DATA POWER ANALYTICS / signal -> decisions",
-    align: "left",
-  },
-  {
-    eyebrow: "02",
-    label: "mission",
-    title: (
-      <>
-        Make the next move
-        <br />
-        easier to see.
-      </>
-    ),
-    copy: "We build a clear line from your source data to the decisions your team needs to make every day.",
-    count: "MISSION / clarity / momentum / evidence",
-    align: "right",
-  },
-  {
-    eyebrow: "03",
-    label: "why-dpa",
-    title: (
-      <>
-        Why Data Power
-        <br />
-        Analytics
-      </>
-    ),
-    copy: "A small, senior team that joins analytics thinking to the systems that make it useful.",
-    count: "03 CAPABILITIES / focus / fluency / follow-through",
-    align: "left",
-  },
-  {
-    eyebrow: "04",
-    label: "services",
-    title: (
-      <>
-        What we
-        <br />
-        build.
-      </>
-    ),
-    copy: "From first source to production insight, we make the path visible and useful.",
-    count: "05 SERVICES / strategy / systems / enablement",
-    align: "right",
-  },
-  {
-    eyebrow: "05",
-    label: "partners",
-    title: (
-      <>
-        Built for teams
-        <br />
-        with somewhere to go.
-      </>
-    ),
-    copy: "Leaders, operators, and growing teams who are ready to replace reporting friction with a shared view of the business.",
-    count: "WHO WE WORK WITH / leaders / operators / builders",
-    align: "left",
-  },
-  {
-    eyebrow: "06",
-    label: "contact",
-    title: (
-      <>
-        Start the
-        <br />
-        conversation.
-      </>
-    ),
-    copy: "Tell us what you are building. We will tell you honestly where better data can create leverage.",
-    count: "06 / CONTACT / scope / signal / next step",
-    align: "right",
-  },
-  {
-    eyebrow: "07",
-    label: "footer",
-    title: (
-      <>
-        Keep the signal
-        <br />
-        moving.
-      </>
-    ),
-    copy: "A clearer view makes better work possible.",
-    count: "END OF FIELD / DATA POWER ANALYTICS",
-    align: "left",
-  },
-] as const;
-
 // World-space X offsets: positive moves right, negative moves left.
 const SHAPE_X_OFFSETS = [3, -3, 3, -3, 3, -3, 0];
-
-const WHY_CARDS = [
-  {
-    number: "01",
-    title: "Clarity",
-    copy: "Turn noisy reporting into a shared view your team can trust.",
-  },
-  {
-    number: "02",
-    title: "Fluency",
-    copy: "Connect strategy, analytics, and engineering without translation loss.",
-  },
-  {
-    number: "03",
-    title: "Follow-through",
-    copy: "Ship systems that people use, then tune them against real outcomes.",
-  },
-] as const;
-
-const SERVICE_CARDS = [
-  {
-    number: "01",
-    title: "Data strategy",
-    copy: "A practical roadmap from business question to measurable signal.",
-  },
-  {
-    number: "02",
-    title: "Analytics engineering",
-    copy: "Reliable models, definitions, and pipelines that make metrics durable.",
-  },
-  {
-    number: "03",
-    title: "Decision dashboards",
-    copy: "Focused interfaces for the moments where teams need to act.",
-  },
-  {
-    number: "04",
-    title: "AI-ready foundations",
-    copy: "Clean, governed context for automation and intelligent products.",
-  },
-  {
-    number: "05",
-    title: "Enablement",
-    copy: "Documentation and working habits that keep the system useful after launch.",
-  },
-] as const;
 
 const MESH_SCENES = [
   {
@@ -248,167 +98,171 @@ const MESH_SCENES = [
   },
 ] as const;
 
-type GeoPoint = [number, number];
-type GeoSegment = {
-  start: GeoPoint;
-  end: GeoPoint;
-  endDistance: number;
-};
-type EarthPoint = [number, number, number];
+type SpherePoint = [number, number, number];
 
-function pointInRing(longitude: number, latitude: number, ring: number[][]) {
-  let inside = false;
+function rotatePoint(
+  point: SpherePoint,
+  rotateX: number,
+  rotateY: number,
+  rotateZ: number,
+): SpherePoint {
+  const [x, y, z] = point;
+  const cosX = Math.cos(rotateX);
+  const sinX = Math.sin(rotateX);
+  const y1 = y * cosX - z * sinX;
+  const z1 = y * sinX + z * cosX;
 
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const current = ring[i];
-    const previous = ring[j];
-    const intersects =
-      current[1] > latitude !== previous[1] > latitude &&
-      longitude <
-        ((previous[0] - current[0]) * (latitude - current[1])) /
-          (previous[1] - current[1]) +
-          current[0];
+  const cosY = Math.cos(rotateY);
+  const sinY = Math.sin(rotateY);
+  const x2 = x * cosY + z1 * sinY;
+  const z2 = -x * sinY + z1 * cosY;
 
-    if (intersects) {
-      inside = !inside;
-    }
-  }
+  const cosZ = Math.cos(rotateZ);
+  const sinZ = Math.sin(rotateZ);
 
-  return inside;
+  return [x2 * cosZ - y1 * sinZ, x2 * sinZ + y1 * cosZ, z2];
 }
 
-function pointOnLand(
-  longitude: number,
-  latitude: number,
-  polygons: number[][][][],
-) {
-  return polygons.some((polygon) => {
-    const [outerRing, ...holes] = polygon;
-
-    return (
-      pointInRing(longitude, latitude, outerRing) &&
-      !holes.some((hole) => pointInRing(longitude, latitude, hole))
-    );
-  });
-}
-
-function earthPoint(
-  longitude: number,
-  latitude: number,
-  radius: number,
-): EarthPoint {
-  const longitudeRadians = (longitude + 80) * (Math.PI / 180);
-  const latitudeRadians = latitude * (Math.PI / 180);
+function spherePoint(theta: number, phi: number, radius: number): SpherePoint {
+  const ringRadius = Math.cos(phi) * radius;
 
   return [
-    Math.cos(latitudeRadians) * Math.cos(longitudeRadians) * radius,
-    Math.sin(latitudeRadians) * radius,
-    Math.cos(latitudeRadians) * Math.sin(longitudeRadians) * radius,
+    Math.cos(theta) * ringRadius,
+    Math.sin(phi) * radius,
+    Math.sin(theta) * ringRadius,
   ];
 }
 
-function shapeEarth(count: number) {
+function setSpherePoint(
+  pos: Float32Array,
+  index: number,
+  point: SpherePoint,
+  jitter = 0,
+) {
+  const offset = index * 3;
+
+  pos[offset] = point[0] + (Math.random() - 0.5) * jitter;
+  pos[offset + 1] = point[1] + (Math.random() - 0.5) * jitter;
+  pos[offset + 2] = point[2] + (Math.random() - 0.5) * jitter;
+}
+function distSq(a: SpherePoint, b: SpherePoint) {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  const dz = a[2] - b[2];
+
+  return dx * dx + dy * dy + dz * dz;
+}
+
+function fibonacciSpherePoint(
+  index: number,
+  total: number,
+  radius: number,
+): SpherePoint {
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  const y = 1 - (index / (total - 1)) * 2;
+  const ringRadius = Math.sqrt(Math.max(0, 1 - y * y));
+  const theta = goldenAngle * index;
+
+  return [
+    Math.cos(theta) * ringRadius * radius,
+    y * radius,
+    Math.sin(theta) * ringRadius * radius,
+  ];
+}
+function shapeNeuralCore(count: number) {
   const pos = new Float32Array(count * 3);
-  const topology = worldAtlas as unknown as Topology<
-    Objects<Record<string, never>>
-  >;
-  const countryLines = mesh(
-    topology,
-    topology.objects.countries,
-    (a, b) => a !== b,
-  ).coordinates as number[][][];
-  const landFeature = feature(topology, topology.objects.land);
-  const landPolygons =
-    landFeature.type === "Feature" &&
-    landFeature.geometry.type === "MultiPolygon"
-      ? (landFeature.geometry.coordinates as number[][][][])
-      : [];
-  const boundarySegments: GeoSegment[] = [];
-  let boundaryDistance = 0;
+  const radius = 4.2;
+  const nodeCount = 42;
+  const edgesPerNode = 3;
+  const hubJitterRadius = 0.16;
+  const edgeJitter = 0.028;
 
-  for (const line of countryLines) {
-    for (let i = 1; i < line.length; i++) {
-      const start = line[i - 1] as GeoPoint;
-      const end = line[i] as GeoPoint;
-      const middleLatitude = ((start[1] + end[1]) / 2) * (Math.PI / 180);
-      const length = Math.hypot(
-        (end[0] - start[0]) * Math.cos(middleLatitude),
-        end[1] - start[1],
-      );
+  // Evenly distributed hub nodes across the sphere surface.
+  const nodes: SpherePoint[] = [];
 
-      if (length === 0) {
-        continue;
+  for (let i = 0; i < nodeCount; i++) {
+    nodes.push(fibonacciSpherePoint(i, nodeCount, radius));
+  }
+
+  // Connect each hub to its nearest neighbors, deduped so A-B isn't added twice.
+  const edgeKeys = new Set<string>();
+  const edges: Array<[SpherePoint, SpherePoint]> = [];
+
+  for (let i = 0; i < nodeCount; i++) {
+    const neighbors = nodes
+      .map((n, j) => ({ j, d: j === i ? Infinity : distSq(nodes[i], n) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, edgesPerNode);
+
+    for (const { j } of neighbors) {
+      const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+
+      if (!edgeKeys.has(key)) {
+        edgeKeys.add(key);
+        edges.push([nodes[i], nodes[j]]);
       }
-
-      boundaryDistance += length;
-      boundarySegments.push({ start, end, endDistance: boundaryDistance });
     }
   }
 
-  const boundaryCount = Math.floor(count * 0.56);
-  const landCount = Math.floor(count * 0.36);
-  const radius = 4.2;
+  // Budget split: most particles fill the sphere's volume, the rest form the
+  // hub clusters and connecting lines on top of that fill.
+  const fillShare = 0.55;
+  const hubShare = 0.16;
+  const fillCount = Math.floor(count * fillShare);
+  const hubCount = Math.floor(count * hubShare);
 
   for (let i = 0; i < count; i++) {
-    let longitude = 0;
-    let latitude = 0;
+    if (i < fillCount) {
+      // Volumetric fill: denser near the surface, thinning toward the core,
+      // so the sphere reads as solid rather than hollow.
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.asin(Math.random() * 2 - 1);
+      const fillRadius = radius * Math.pow(Math.random(), 0.42);
+      const point = spherePoint(theta, phi, fillRadius);
 
-    if (i < boundaryCount && boundarySegments.length > 0) {
-      for (let attempt = 0; attempt < 32; attempt++) {
-        const distance = Math.random() * boundaryDistance;
-        let low = 0;
-        let high = boundarySegments.length - 1;
-
-        while (low < high) {
-          const middle = Math.floor((low + high) / 2);
-
-          if (boundarySegments[middle].endDistance < distance) {
-            low = middle + 1;
-          } else {
-            high = middle;
-          }
-        }
-
-        const segment = boundarySegments[low];
-        const t = Math.random();
-        longitude = segment.start[0] + (segment.end[0] - segment.start[0]) * t;
-        latitude = segment.start[1] + (segment.end[1] - segment.start[1]) * t;
-
-        if (earthPoint(longitude, latitude, 1)[2] > -0.08) {
-          break;
-        }
-      }
-    } else if (i < boundaryCount + landCount) {
-      for (let attempt = 0; attempt < 240; attempt++) {
-        longitude = Math.random() * 360 - 180;
-        latitude = Math.asin(Math.random() * 2 - 1) * (180 / Math.PI);
-
-        if (
-          pointOnLand(longitude, latitude, landPolygons) &&
-          earthPoint(longitude, latitude, 1)[2] > -0.08
-        ) {
-          break;
-        }
-      }
-    } else {
-      const angle = Math.random() * Math.PI * 2;
-      const depth = Math.random() * radius;
-      const planeRadius = Math.sqrt(radius * radius - depth * depth);
-
-      pos[i * 3] = Math.cos(angle) * planeRadius;
-      pos[i * 3 + 1] = Math.sin(angle) * planeRadius;
-      pos[i * 3 + 2] = depth - 0.08;
+      pos[i * 3] = point[0] + (Math.random() - 0.5) * 0.05;
+      pos[i * 3 + 1] = point[1] + (Math.random() - 0.5) * 0.05;
+      pos[i * 3 + 2] = point[2] + (Math.random() - 0.5) * 0.05;
       continue;
     }
 
-    const point = earthPoint(
-      longitude,
-      latitude,
-      radius * (0.994 + Math.random() * 0.014),
-    );
-    pos[i * 3] = point[0];
-    pos[i * 3 + 1] = point[1];
-    pos[i * 3 + 2] = point[2];
+    if (i < fillCount + hubCount) {
+      // Small dense cluster around a hub, cycling through nodes for even coverage.
+      const node = nodes[i % nodeCount];
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.asin(Math.random() * 2 - 1);
+      const jitterRadius = hubJitterRadius * Math.pow(Math.random(), 0.5);
+      const point = spherePoint(theta, phi, jitterRadius);
+
+      pos[i * 3] = node[0] + point[0];
+      pos[i * 3 + 1] = node[1] + point[1];
+      pos[i * 3 + 2] = node[2] + point[2];
+      continue;
+    }
+
+    // Particles traced along hub-to-hub connections, forming the "network" lines.
+    const edge = edges[i % edges.length];
+    const [start, end] = edge;
+    const t = Math.random();
+
+    // Slight bow outward so lines feel like they hug the sphere rather than
+    // cutting straight through its interior.
+    const bow = Math.sin(t * Math.PI) * 0.12;
+    const midLift = 1 + bow / radius;
+
+    const baseX = start[0] + (end[0] - start[0]) * t;
+    const baseY = start[1] + (end[1] - start[1]) * t;
+    const baseZ = start[2] + (end[2] - start[2]) * t;
+
+    pos[i * 3] =
+      baseX * (t > 0 && t < 1 ? midLift : 1) +
+      (Math.random() - 0.5) * edgeJitter;
+    pos[i * 3 + 1] =
+      baseY * (t > 0 && t < 1 ? midLift : 1) +
+      (Math.random() - 0.5) * edgeJitter;
+    pos[i * 3 + 2] =
+      baseZ * (t > 0 && t < 1 ? midLift : 1) +
+      (Math.random() - 0.5) * edgeJitter;
   }
 
   return pos;
@@ -578,31 +432,131 @@ function shapeTree(count: number) {
     angle: number;
   };
   const branches: TreePath[] = [
-    { start: [-3.7, -2.1], control: [-2.2, 0.1], end: [-1.5, 2.35], width: 0.2 },
-    { start: [-3.4, -1.35], control: [-1.65, 0.9], end: [0.3, 3.65], width: 0.18 },
-    { start: [-3.25, -0.55], control: [-1.15, 0.25], end: [2.1, 2.95], width: 0.2 },
-    { start: [-3.1, 0.15], control: [-0.65, 0.75], end: [3.8, 2.2], width: 0.16 },
-    { start: [-3.05, 0.75], control: [-0.95, 1.7], end: [2.9, 4.15], width: 0.16 },
-    { start: [-3.1, 1.25], control: [-1.7, 2.6], end: [-0.75, 4.55], width: 0.14 },
-    { start: [-2.95, -0.1], control: [0.05, 0.25], end: [4.9, 1.25], width: 0.13 },
+    {
+      start: [-3.7, -2.1],
+      control: [-2.2, 0.1],
+      end: [-1.5, 2.35],
+      width: 0.2,
+    },
+    {
+      start: [-3.4, -1.35],
+      control: [-1.65, 0.9],
+      end: [0.3, 3.65],
+      width: 0.18,
+    },
+    {
+      start: [-3.25, -0.55],
+      control: [-1.15, 0.25],
+      end: [2.1, 2.95],
+      width: 0.2,
+    },
+    {
+      start: [-3.1, 0.15],
+      control: [-0.65, 0.75],
+      end: [3.8, 2.2],
+      width: 0.16,
+    },
+    {
+      start: [-3.05, 0.75],
+      control: [-0.95, 1.7],
+      end: [2.9, 4.15],
+      width: 0.16,
+    },
+    {
+      start: [-3.1, 1.25],
+      control: [-1.7, 2.6],
+      end: [-0.75, 4.55],
+      width: 0.14,
+    },
+    {
+      start: [-2.95, -0.1],
+      control: [0.05, 0.25],
+      end: [4.9, 1.25],
+      width: 0.13,
+    },
   ];
   const twigs: TreePath[] = [
-    { start: [-1.95, 1.15], control: [-1.7, 2.2], end: [-2.3, 3.45], width: 0.075 },
-    { start: [-1.7, 1.72], control: [-0.55, 2.2], end: [0.35, 4.55], width: 0.075 },
-    { start: [-0.72, 1.95], control: [0.55, 2.2], end: [1.9, 4.3], width: 0.07 },
-    { start: [0.45, 2.35], control: [1.85, 2.25], end: [3.75, 3.15], width: 0.07 },
-    { start: [1.1, 2.55], control: [2.7, 2.8], end: [4.65, 2.45], width: 0.065 },
+    {
+      start: [-1.95, 1.15],
+      control: [-1.7, 2.2],
+      end: [-2.3, 3.45],
+      width: 0.075,
+    },
+    {
+      start: [-1.7, 1.72],
+      control: [-0.55, 2.2],
+      end: [0.35, 4.55],
+      width: 0.075,
+    },
+    {
+      start: [-0.72, 1.95],
+      control: [0.55, 2.2],
+      end: [1.9, 4.3],
+      width: 0.07,
+    },
+    {
+      start: [0.45, 2.35],
+      control: [1.85, 2.25],
+      end: [3.75, 3.15],
+      width: 0.07,
+    },
+    {
+      start: [1.1, 2.55],
+      control: [2.7, 2.8],
+      end: [4.65, 2.45],
+      width: 0.065,
+    },
     { start: [1.9, 2.65], control: [3.45, 1.9], end: [5.25, 1.7], width: 0.06 },
-    { start: [-2.65, 0.5], control: [-1.7, 0.6], end: [-0.05, 1.35], width: 0.065 },
-    { start: [-2.55, 1.0], control: [-1.4, 1.85], end: [-2.65, 2.65], width: 0.06 },
-    { start: [-3.05, 1.5], control: [-2.3, 2.7], end: [-1.8, 4.3], width: 0.06 },
-    { start: [-2.9, -0.4], control: [-1.2, -0.35], end: [1.2, 0.7], width: 0.06 },
-    { start: [0.85, 2.55], control: [0.95, 3.35], end: [0.45, 4.7], width: 0.06 },
+    {
+      start: [-2.65, 0.5],
+      control: [-1.7, 0.6],
+      end: [-0.05, 1.35],
+      width: 0.065,
+    },
+    {
+      start: [-2.55, 1.0],
+      control: [-1.4, 1.85],
+      end: [-2.65, 2.65],
+      width: 0.06,
+    },
+    {
+      start: [-3.05, 1.5],
+      control: [-2.3, 2.7],
+      end: [-1.8, 4.3],
+      width: 0.06,
+    },
+    {
+      start: [-2.9, -0.4],
+      control: [-1.2, -0.35],
+      end: [1.2, 0.7],
+      width: 0.06,
+    },
+    {
+      start: [0.85, 2.55],
+      control: [0.95, 3.35],
+      end: [0.45, 4.7],
+      width: 0.06,
+    },
   ];
   const rootSegments: TreePath[] = [
-    { start: [-4.8, -4.55], control: [-4.2, -4.75], end: [-2.6, -5.05], width: 0.14 },
-    { start: [-4.55, -4.6], control: [-5.05, -4.35], end: [-6.1, -4.0], width: 0.12 },
-    { start: [-4.75, -4.35], control: [-4.8, -3.8], end: [-5.55, -3.1], width: 0.09 },
+    {
+      start: [-4.8, -4.55],
+      control: [-4.2, -4.75],
+      end: [-2.6, -5.05],
+      width: 0.14,
+    },
+    {
+      start: [-4.55, -4.6],
+      control: [-5.05, -4.35],
+      end: [-6.1, -4.0],
+      width: 0.12,
+    },
+    {
+      start: [-4.75, -4.35],
+      control: [-4.8, -3.8],
+      end: [-5.55, -3.1],
+      width: 0.09,
+    },
   ];
   const leafClusters: LeafCluster[] = [
     { center: [-2.45, 3.75], radius: 0.62, angle: -0.8 },
@@ -629,10 +583,7 @@ function shapeTree(count: number) {
     pos[index * 3 + 1] = y;
     pos[index * 3 + 2] = z + Math.sin((x + y) * 1.3) * 0.08;
   };
-  const segmentPoint = (
-    segment: TreePath,
-    t: number,
-  ) => {
+  const segmentPoint = (segment: TreePath, t: number) => {
     const inverseT = 1 - t;
 
     return {
@@ -692,11 +643,17 @@ function shapeTree(count: number) {
     }
 
     if (section < 9) {
-      const root = rootSegments[Math.floor(Math.random() * rootSegments.length)];
+      const root =
+        rootSegments[Math.floor(Math.random() * rootSegments.length)];
       const t = Math.pow(Math.random(), 0.85);
       const point = segmentPoint(root, t);
 
-      setPoint(i, point.x + jitter(root.width), point.y + jitter(root.width), jitter(0.18));
+      setPoint(
+        i,
+        point.x + jitter(root.width),
+        point.y + jitter(root.width),
+        jitter(0.18),
+      );
       continue;
     }
 
@@ -707,7 +664,12 @@ function shapeTree(count: number) {
       const t = Math.pow(Math.random(), 0.82);
       const point = segmentPoint(branch, t);
 
-      setPoint(i, point.x + jitter(branch.width), point.y + jitter(branch.width), jitter(0.24));
+      setPoint(
+        i,
+        point.x + jitter(branch.width),
+        point.y + jitter(branch.width),
+        jitter(0.24),
+      );
       continue;
     }
 
@@ -722,7 +684,8 @@ function shapeTree(count: number) {
     }
 
     // Small, separated leaf clusters read as foliage overhead instead of a blob.
-    const cluster = leafClusters[Math.floor(Math.random() * leafClusters.length)];
+    const cluster =
+      leafClusters[Math.floor(Math.random() * leafClusters.length)];
     const point = leafPoint(cluster);
 
     setPoint(i, point.x + jitter(0.08), point.y + jitter(0.08), jitter(0.48));
@@ -739,7 +702,12 @@ function shapeMilkyWay(count: number) {
   const tilt = 0.34;
   const depth = 0.22;
   const jitter = (amount: number) => (Math.random() - 0.5) * amount;
-  const projectGalaxy = (index: number, angle: number, radius: number, thickness: number) => {
+  const projectGalaxy = (
+    index: number,
+    angle: number,
+    radius: number,
+    thickness: number,
+  ) => {
     const warp = Math.sin(angle * 2.3 + radius * 1.7) * 0.12;
 
     pos[index * 3] = Math.cos(angle) * radius + jitter(thickness);
@@ -799,81 +767,6 @@ function shapeMilkyWay(count: number) {
   }
 
   return pos;
-}
-
-type SvgParticleMask = {
-  width: number;
-  height: number;
-  fillPixels: number[];
-  outlinePixels: number[];
-};
-
-function loadSvgParticleMask(source: string) {
-  return new Promise<SvgParticleMask>((resolve, reject) => {
-    const image = new Image();
-
-    image.onload = () => {
-      const size = 360;
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-
-      if (!context) {
-        reject(new Error(`Unable to read ${source}`));
-        return;
-      }
-
-      context.drawImage(image, 0, 0, size, size);
-      const pixels = context.getImageData(0, 0, size, size).data;
-      const fillPixels: number[] = [];
-      const outlinePixels: number[] = [];
-      const alphaAt = (x: number, y: number) => pixels[(y * size + x) * 4 + 3];
-
-      for (let y = 1; y < size - 1; y++) {
-        for (let x = 1; x < size - 1; x++) {
-          if (alphaAt(x, y) < 128) {
-            continue;
-          }
-
-          const pixel = y * size + x;
-          fillPixels.push(pixel);
-
-          if (
-            alphaAt(x - 1, y) < 128 ||
-            alphaAt(x + 1, y) < 128 ||
-            alphaAt(x, y - 1) < 128 ||
-            alphaAt(x, y + 1) < 128
-          ) {
-            outlinePixels.push(pixel);
-          }
-        }
-      }
-
-      if (fillPixels.length === 0) {
-        reject(new Error(`No opaque pixels found in ${source}`));
-        return;
-      }
-
-      resolve({ width: size, height: size, fillPixels, outlinePixels });
-    };
-
-    image.onerror = () => reject(new Error(`Unable to load ${source}`));
-    image.src = source;
-  });
-}
-
-function sampleMaskPoint(mask: SvgParticleMask, outlineRatio: number) {
-  const source =
-    Math.random() < outlineRatio && mask.outlinePixels.length > 0
-      ? mask.outlinePixels
-      : mask.fillPixels;
-  const pixel = source[Math.floor(Math.random() * source.length)];
-
-  return [
-    (pixel % mask.width) / (mask.width - 1) - 0.5,
-    0.5 - Math.floor(pixel / mask.width) / (mask.height - 1),
-  ] as const;
 }
 
 function makeDotTexture() {
@@ -1016,33 +909,10 @@ export function ParticleHero() {
       shapeTree(FIELD.particleCount),
       shapeMilkyWay(FIELD.particleCount),
     ].map((shape, index) => offsetShape(shape, SHAPE_X_OFFSETS[index]));
-    const introEarth = offsetShape(
-      shapeEarth(FIELD.particleCount),
+    const introDataSphere = offsetShape(
+      shapeNeuralCore(FIELD.particleCount),
       SHAPE_X_OFFSETS[0],
     );
-    let svgShapesCancelled = false;
-
-    void Promise.all([
-      loadSvgParticleMask("/owl.svg"),
-      loadSvgParticleMask("/shark.svg"),
-    ])
-      .then(([owlMask, sharkMask]) => {
-        if (svgShapesCancelled) {
-          return;
-        }
-
-        // shapes[5] = offsetShape(
-        //   shapeOwlFromMask(owlMask, FIELD.particleCount),
-        //   SHAPE_X_OFFSETS[5],
-        // );
-        // shapes[6] = offsetShape(
-        //   shapeSharkSchoolFromMask(sharkMask, FIELD.particleCount),
-        //   SHAPE_X_OFFSETS[6],
-        // );
-      })
-      .catch(() => {
-        // Retain the procedural fallback when an optional asset is unavailable.
-      });
 
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(shapes[0]);
@@ -1156,6 +1026,16 @@ export function ParticleHero() {
           ),
           1,
         );
+      } else {
+        targetShapeProgress = targetProgress;
+        targetIntroExit = Math.min(
+          Math.max(
+            window.scrollY /
+              Math.max(window.innerHeight * FIELD.introScrollExit, 1),
+            0,
+          ),
+          1,
+        );
       }
     };
 
@@ -1262,7 +1142,7 @@ export function ParticleHero() {
       const introExit = Math.min(introExitProgress, 1);
 
       if (introExit < 1) {
-        lerpShapes(introEarth, shapes[0], introMorph, introScratch);
+        lerpShapes(introDataSphere, shapes[0], introMorph, introScratch);
         lerpShapes(introScratch, scratch, introExit, scratch);
       }
 
@@ -1288,7 +1168,8 @@ export function ParticleHero() {
             baseY +
             Math.cos(elapsed * 0.72 + phase * 1.3 + baseZ * 0.3) * drift * 0.8;
           idleScratch[offset + 2] =
-            baseZ + Math.sin(elapsed * 0.64 + phase * 0.8 + baseX * 0.25) * drift;
+            baseZ +
+            Math.sin(elapsed * 0.64 + phase * 0.8 + baseX * 0.25) * drift;
         }
 
         array.set(idleScratch);
@@ -1296,8 +1177,7 @@ export function ParticleHero() {
 
       attr.needsUpdate = true;
 
-      camera.position.x +=
-        (mouseX * 1.2 - camera.position.x) * 0.03;
+      camera.position.x += (mouseX * 1.2 - camera.position.x) * 0.03;
       camera.position.y += (-mouseY * 0.8 - camera.position.y) * 0.03;
       camera.position.z = FIELD.cameraZ - scrollProgress * 1.5;
       camera.lookAt(0, 0, 0);
@@ -1313,7 +1193,6 @@ export function ParticleHero() {
     window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
-      svgShapesCancelled = true;
       cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
@@ -1349,125 +1228,6 @@ export function ParticleHero() {
 
       <canvas ref={canvasRef} className="particle-field" aria-hidden="true" />
       <div className="particle-vignette" aria-hidden="true" />
-
-      <div className="particle-progress" aria-hidden="true">
-        <div ref={railFillRef} className="particle-progress__fill" />
-        {SHAPE_DETAILS.map((shape, index) => {
-          const top = `${(index / (SHAPE_DETAILS.length - 1)) * 100}%`;
-
-          return (
-            <div key={shape.label}>
-              <div className="particle-progress__tick" style={{ top }} />
-              <div className="particle-progress__label" style={{ top }}>
-                {shape.label}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div ref={scrollCueRef} className="particle-scroll-cue">
-        <span className="particle-scroll-cue__line" />
-        scroll
-      </div>
-
-      <main className="particle-main">
-        {SHAPE_DETAILS.map((shape, index) => {
-          const isRight = shape.align === "right";
-
-          return (
-            <section
-              key={shape.label}
-              id={shape.label}
-              className={`particle-stage${isRight ? " particle-stage--right" : ""}`}
-            >
-              <div className="landing-copy">
-                <div className="particle-eyebrow">
-                  {shape.eyebrow} - <span>{shape.label}</span>
-                </div>
-                {index === 0 ? (
-                  <h1 className="particle-title">{shape.title}</h1>
-                ) : (
-                  <h2 className="particle-title">{shape.title}</h2>
-                )}
-                <p>{shape.copy}</p>
-                <div className="particle-count">{shape.count}</div>
-
-                {shape.label === "home" && (
-                  <div className="landing-actions">
-                    <a
-                      className="landing-button landing-button--primary"
-                      href="#services"
-                    >
-                      See services
-                    </a>
-                    <a
-                      className="landing-button landing-button--ghost"
-                      href="#partners"
-                    >
-                      Read reviews
-                    </a>
-                  </div>
-                )}
-
-                {shape.label === "why-dpa" && (
-                  <div className="landing-grid landing-grid--three">
-                    {WHY_CARDS.map((card) => (
-                      <article className="landing-card" key={card.number}>
-                        <div className="landing-card__number">
-                          {card.number}
-                        </div>
-                        <h3>{card.title}</h3>
-                        <p>{card.copy}</p>
-                      </article>
-                    ))}
-                  </div>
-                )}
-
-                {shape.label === "services" && (
-                  <div className="landing-grid landing-grid--services">
-                    {SERVICE_CARDS.map((card) => (
-                      <article className="landing-card" key={card.number}>
-                        <div className="landing-card__number">
-                          {card.number}
-                        </div>
-                        <h3>{card.title}</h3>
-                        <p>{card.copy}</p>
-                      </article>
-                    ))}
-                  </div>
-                )}
-
-                {shape.label === "partners" && (
-                  <blockquote className="landing-quote">
-                    <p>
-                      &ldquo;The site paid for itself in the first month - and
-                      it actually feels like ours, not a template.&rdquo;
-                    </p>
-                    <cite>- client, Data Power Analytics</cite>
-                  </blockquote>
-                )}
-
-                {shape.label === "contact" && (
-                  <div className="landing-actions">
-                    <a
-                      className="landing-button landing-button--primary"
-                      href="mailto:hello@datapoweranalytics.com"
-                    >
-                      Get in touch
-                    </a>
-                  </div>
-                )}
-              </div>
-            </section>
-          );
-        })}
-      </main>
-
-      <footer className="particle-footer">
-        <p>- end of field -</p>
-        <span>Data Power Analytics</span>
-      </footer>
     </div>
   );
 }

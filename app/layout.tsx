@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { Manrope } from "next/font/google";
+import { DevelopmentAgentation } from "./components/DevelopmentAgentation";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -27,9 +24,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${manrope.variable} h-full bg-brand-navy font-sans antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <DevelopmentAgentation />
+      </body>
     </html>
   );
 }

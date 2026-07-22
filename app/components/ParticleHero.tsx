@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import * as THREE from "three";
+import type * as Three from "three";
+
+type ThreeModule = typeof import("three");
 
 const FIELD = {
   particleCount: 10000,
@@ -23,11 +25,19 @@ const FIELD = {
 };
 
 // World-space X offsets: positive moves right, negative moves left.
-const SHAPE_X_OFFSETS = [3, -3, 3, -3, 3, -3, 0];
+const SHAPE_X_OFFSETS = [3, -3, 3, -3, 3, -3, 3];
+
+// Scroll timing offsets in viewport heights. Positive values make a shape form later.
+const SHAPE_STOP_OFFSETS_IN_VIEWPORTS: Record<string, number> = {
+  "ant-colony": 0.12,
+  // The contact copy begins before the stage center, so complete this final
+  // morph sooner and leave the Milky Way visible behind the full section.
+  "milky-way": -0.45,
+};
 
 const MESH_SCENES = [
   {
-    colors: ["#2FB8C6", "#0F4C5C", "#0A1830", "#1E8F5E"],
+    colors: ["#2AA8B8", "#1E7C8C", "#0B1F3A", "#1F7A54"],
     positions: [
       [15, 20],
       [85, 15],
@@ -37,7 +47,7 @@ const MESH_SCENES = [
     sizes: [65, 60, 55, 45],
   },
   {
-    colors: ["#0F4C5C", "#1E8F5E", "#2FB8C6", "#D4AD5C"],
+    colors: ["#1E7C8C", "#1F7A54", "#2AA8B8", "#C9A24B"],
     positions: [
       [80, 10],
       [20, 25],
@@ -47,7 +57,7 @@ const MESH_SCENES = [
     sizes: [60, 65, 50, 35],
   },
   {
-    colors: ["#1E8F5E", "#2FB8C6", "#D4AD5C", "#0F4C5C"],
+    colors: ["#1F7A54", "#2AA8B8", "#C9A24B", "#1E7C8C"],
     positions: [
       [25, 15],
       [80, 30],
@@ -57,7 +67,7 @@ const MESH_SCENES = [
     sizes: [70, 50, 40, 55],
   },
   {
-    colors: ["#D4AD5C", "#1E8F5E", "#0F4C5C", "#2FB8C6"],
+    colors: ["#C9A24B", "#1F7A54", "#1E7C8C", "#2AA8B8"],
     positions: [
       [50, 20],
       [15, 60],
@@ -67,7 +77,7 @@ const MESH_SCENES = [
     sizes: [45, 60, 55, 40],
   },
   {
-    colors: ["#2FB8C6", "#1E8F5E", "#D4AD5C", "#0F4C5C"],
+    colors: ["#2AA8B8", "#1F7A54", "#C9A24B", "#1E7C8C"],
     positions: [
       [80, 30],
       [20, 45],
@@ -77,7 +87,7 @@ const MESH_SCENES = [
     sizes: [55, 50, 60, 40],
   },
   {
-    colors: ["#D4AD5C", "#2FB8C6", "#1E8F5E", "#0F4C5C"],
+    colors: ["#C9A24B", "#2AA8B8", "#1F7A54", "#1E7C8C"],
     positions: [
       [45, 20],
       [15, 75],
@@ -87,7 +97,7 @@ const MESH_SCENES = [
     sizes: [50, 55, 45, 55],
   },
   {
-    colors: ["#2FB8C6", "#0F4C5C", "#0A1830", "#1E8F5E"],
+    colors: ["#2AA8B8", "#1E7C8C", "#0B1F3A", "#1F7A54"],
     positions: [
       [30, 30],
       [75, 20],
@@ -100,29 +110,6 @@ const MESH_SCENES = [
 
 type SpherePoint = [number, number, number];
 
-function rotatePoint(
-  point: SpherePoint,
-  rotateX: number,
-  rotateY: number,
-  rotateZ: number,
-): SpherePoint {
-  const [x, y, z] = point;
-  const cosX = Math.cos(rotateX);
-  const sinX = Math.sin(rotateX);
-  const y1 = y * cosX - z * sinX;
-  const z1 = y * sinX + z * cosX;
-
-  const cosY = Math.cos(rotateY);
-  const sinY = Math.sin(rotateY);
-  const x2 = x * cosY + z1 * sinY;
-  const z2 = -x * sinY + z1 * cosY;
-
-  const cosZ = Math.cos(rotateZ);
-  const sinZ = Math.sin(rotateZ);
-
-  return [x2 * cosZ - y1 * sinZ, x2 * sinZ + y1 * cosZ, z2];
-}
-
 function spherePoint(theta: number, phi: number, radius: number): SpherePoint {
   const ringRadius = Math.cos(phi) * radius;
 
@@ -133,18 +120,6 @@ function spherePoint(theta: number, phi: number, radius: number): SpherePoint {
   ];
 }
 
-function setSpherePoint(
-  pos: Float32Array,
-  index: number,
-  point: SpherePoint,
-  jitter = 0,
-) {
-  const offset = index * 3;
-
-  pos[offset] = point[0] + (Math.random() - 0.5) * jitter;
-  pos[offset + 1] = point[1] + (Math.random() - 0.5) * jitter;
-  pos[offset + 2] = point[2] + (Math.random() - 0.5) * jitter;
-}
 function distSq(a: SpherePoint, b: SpherePoint) {
   const dx = a[0] - b[0];
   const dy = a[1] - b[1];
@@ -696,8 +671,8 @@ function shapeTree(count: number) {
 
 function shapeMilkyWay(count: number) {
   const pos = new Float32Array(count * 3);
-  const coreRadius = 0.72;
-  const galaxyRadius = 4.95;
+  const coreRadius = 0.9;
+  const galaxyRadius = 6.19;
   const armCount = 4;
   const tilt = 0.34;
   const depth = 0.22;
@@ -746,7 +721,7 @@ function shapeMilkyWay(count: number) {
     // Dust-lane-like cross streams through the disk.
     if (region < 16) {
       const radiusT = Math.random();
-      const radius = 1 + radiusT * 3.6;
+      const radius = 1.25 + radiusT * 4.5;
       const angle =
         Math.PI * 0.18 +
         radius * 0.8 +
@@ -769,7 +744,7 @@ function shapeMilkyWay(count: number) {
   return pos;
 }
 
-function makeDotTexture() {
+function makeDotTexture(THREE: ThreeModule) {
   const size = 64;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -864,43 +839,50 @@ function lerpHex(a: string, b: string, t: number) {
 
 export function ParticleHero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const railFillRef = useRef<HTMLDivElement>(null);
-  const scrollCueRef = useRef<HTMLDivElement>(null);
   const meshBlobRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    let disposed = false;
+    let disposeScene = () => {};
 
-    if (!canvas) {
-      return;
-    }
+    const initialize = async () => {
+      // Three.js is only needed once the browser is ready to draw the canvas. Keeping it
+      // out of the route's initial client bundle makes the page itself available sooner.
+      const THREE = await import("three");
+      const canvas = canvasRef.current;
 
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
+      if (disposed || !canvas) {
+        return;
+      }
+
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
       55,
       window.innerWidth / window.innerHeight,
       0.1,
       100,
     );
 
-    camera.position.z = FIELD.cameraZ;
+      camera.position.z = FIELD.cameraZ;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-    });
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        // Point sprites are texture-masked, so MSAA does not improve their edge quality.
+        antialias: false,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
 
-    renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, FIELD.maxPixelRatio),
-    );
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(FIELD.backgroundColor, 0);
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, FIELD.maxPixelRatio),
+      );
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(FIELD.backgroundColor, 0);
 
-    const shapes = [
+      const shapes = [
       shapeDatabaseCylinder(FIELD.particleCount),
       shapeBeehive(FIELD.particleCount),
       shapeSpiderWeb(FIELD.particleCount),
@@ -908,18 +890,33 @@ export function ParticleHero() {
       shapeAntColony(FIELD.particleCount),
       shapeTree(FIELD.particleCount),
       shapeMilkyWay(FIELD.particleCount),
-    ].map((shape, index) => offsetShape(shape, SHAPE_X_OFFSETS[index]));
-    const introDataSphere = offsetShape(
-      shapeNeuralCore(FIELD.particleCount),
-      SHAPE_X_OFFSETS[0],
-    );
+      ].map((shape, index) => offsetShape(shape, SHAPE_X_OFFSETS[index]));
+      const introDataSphere = offsetShape(
+        shapeNeuralCore(FIELD.particleCount),
+        SHAPE_X_OFFSETS[0],
+      );
 
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(shapes[0]);
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(shapes[0]);
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute(
+        "introPosition",
+        new THREE.BufferAttribute(introDataSphere, 3),
+      );
 
-    const dotTexture = makeDotTexture();
-    const material = new THREE.PointsMaterial({
+      const particlePhases = new Float32Array(FIELD.particleCount);
+
+      for (let i = 0; i < particlePhases.length; i++) {
+        particlePhases[i] = Math.random() * Math.PI * 2;
+      }
+
+      geometry.setAttribute(
+        "particlePhase",
+        new THREE.BufferAttribute(particlePhases, 1),
+      );
+
+      const dotTexture = makeDotTexture(THREE);
+      const material = new THREE.PointsMaterial({
       size: FIELD.particleSize,
       map: dotTexture,
       transparent: true,
@@ -927,10 +924,42 @@ export function ParticleHero() {
       blending: THREE.AdditiveBlending,
       color: new THREE.Color(FIELD.particleColor),
       opacity: FIELD.particleOpacity,
-    });
+      });
+      const particleUniforms = {
+        elapsed: { value: 0 },
+        introMorph: { value: 1 },
+        introExit: { value: 1 },
+        idleMotion: { value: reduceMotion ? 0 : FIELD.idleMotion },
+      };
 
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
+      material.onBeforeCompile = (shader) => {
+        Object.assign(shader.uniforms, particleUniforms);
+        shader.vertexShader = shader.vertexShader
+          .replace(
+            "#include <common>",
+            `#include <common>
+attribute vec3 introPosition;
+attribute float particlePhase;
+uniform float elapsed;
+uniform float introMorph;
+uniform float introExit;
+uniform float idleMotion;`,
+          )
+          .replace(
+            "#include <begin_vertex>",
+            `vec3 basePosition = mix(introPosition, position, introMorph);
+basePosition = mix(basePosition, position, introExit);
+vec3 transformed = basePosition;
+transformed.x += sin(elapsed * 0.85 + particlePhase + basePosition.y * 0.4) * idleMotion;
+transformed.y += cos(elapsed * 0.72 + particlePhase * 1.3 + basePosition.z * 0.3) * ${
+              "idleMotion * 0.8"
+            };
+transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.25) * idleMotion;`,
+          );
+      };
+
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
 
     const farGeometry = new THREE.BufferGeometry();
     const farPosition = new Float32Array(FIELD.farParticleCount * 3);
@@ -946,7 +975,7 @@ export function ParticleHero() {
       new THREE.BufferAttribute(farPosition, 3),
     );
 
-    const farTexture = makeDotTexture();
+    const farTexture = makeDotTexture(THREE);
     const farMaterial = new THREE.PointsMaterial({
       size: FIELD.farParticleSize,
       map: farTexture,
@@ -961,98 +990,111 @@ export function ParticleHero() {
 
     const segmentCount = shapes.length - 1;
     const scratch = new Float32Array(FIELD.particleCount * 3);
-    const introScratch = new Float32Array(FIELD.particleCount * 3);
-    const idleScratch = new Float32Array(FIELD.particleCount * 3);
-    const particlePhases = new Float32Array(FIELD.particleCount);
-
-    for (let i = 0; i < particlePhases.length; i++) {
-      particlePhases[i] = Math.random() * Math.PI * 2;
-    }
-
     const clock = new THREE.Timer();
     let animationFrame = 0;
+    let isAnimating = false;
     let scrollProgress = 0;
     let targetProgress = 0;
     let shapeProgress = 0;
     let targetShapeProgress = 0;
     let introExitProgress = 0;
     let targetIntroExit = 0;
-    let cueHidden = false;
     let mouseX = 0;
     let mouseY = 0;
     const stageElements = Array.from(
       document.querySelectorAll<HTMLElement>(".particle-stage"),
     );
+    let maxScroll = 0;
+    let stageShapeStops: number[] = [];
+    let introScrollDistance = window.innerHeight * FIELD.introScrollExit;
 
-    const updateScrollProgress = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      targetProgress = max > 0 ? window.scrollY / max : 0;
+    // These values only change after layout changes. Reading layout during each scroll
+    // event can force a synchronous reflow, so measure them on startup and resize instead.
+    const refreshScrollMetrics = () => {
+      maxScroll = Math.max(
+        document.documentElement.scrollHeight - window.innerHeight,
+        0,
+      );
 
       const firstStage = stageElements[0];
-      const lastStage = stageElements[stageElements.length - 1];
 
-      if (firstStage && lastStage) {
-        const viewportHeight = window.innerHeight;
+      if (firstStage) {
+        stageShapeStops = stageElements.map((stage) => {
+          const center =
+            stage.getBoundingClientRect().top +
+            window.scrollY +
+            stage.offsetHeight / 2;
+          const stopOffset =
+            SHAPE_STOP_OFFSETS_IN_VIEWPORTS[stage.dataset.shape ?? ""] ?? 0;
 
-        // Calculate absolute document Y of the center of the first and last stages
-        const firstCenter =
-          firstStage.getBoundingClientRect().top +
-          window.scrollY +
-          firstStage.offsetHeight / 2;
-        const lastCenter =
-          lastStage.getBoundingClientRect().top +
-          window.scrollY +
-          lastStage.offsetHeight / 2;
-
-        // Progress should be 0 when the first stage is in the middle of the viewport
-        // and 1 when the last stage is in the middle of the viewport.
-        const startScroll = firstCenter - viewportHeight / 2;
-        const endScroll = lastCenter - viewportHeight / 2;
-        const scrollDistance = endScroll - startScroll;
-
-        targetShapeProgress =
-          scrollDistance > 0
-            ? Math.min(
-                Math.max((window.scrollY - startScroll) / scrollDistance, 0),
-                1,
-              )
-            : 0;
-
-        targetIntroExit = Math.min(
-          Math.max(
-            window.scrollY /
-              Math.max(firstStage.offsetHeight * FIELD.introScrollExit, 1),
-            0,
-          ),
+          return (
+            center -
+            window.innerHeight / 2 +
+            stopOffset * window.innerHeight
+          );
+        });
+        introScrollDistance = Math.max(
+          firstStage.offsetHeight * FIELD.introScrollExit,
           1,
         );
       } else {
-        targetShapeProgress = targetProgress;
-        targetIntroExit = Math.min(
-          Math.max(
-            window.scrollY /
-              Math.max(window.innerHeight * FIELD.introScrollExit, 1),
-            0,
-          ),
+        stageShapeStops = [];
+        introScrollDistance = Math.max(
+          window.innerHeight * FIELD.introScrollExit,
           1,
         );
       }
+    };
+
+    const getShapeProgressForScroll = (scrollY: number) => {
+      if (stageShapeStops.length < 2) {
+        return targetProgress;
+      }
+
+      const firstStop = stageShapeStops[0];
+      const lastStop = stageShapeStops[stageShapeStops.length - 1];
+
+      if (scrollY <= firstStop) {
+        return 0;
+      }
+
+      if (scrollY >= lastStop) {
+        return 1;
+      }
+
+      const stopIndex = stageShapeStops.findIndex((stop, index) => {
+        const nextStop = stageShapeStops[index + 1];
+
+        return nextStop !== undefined && scrollY >= stop && scrollY < nextStop;
+      });
+      const currentStopIndex = Math.max(stopIndex, 0);
+      const start = stageShapeStops[currentStopIndex];
+      const end = stageShapeStops[currentStopIndex + 1];
+      const localT = end > start ? (scrollY - start) / (end - start) : 0;
+
+      return (currentStopIndex + localT) / (stageShapeStops.length - 1);
+    };
+
+    const updateScrollProgress = () => {
+      const scrollY = window.scrollY;
+      targetProgress = maxScroll > 0 ? scrollY / maxScroll : 0;
+      targetShapeProgress = getShapeProgressForScroll(scrollY);
+      targetIntroExit = Math.min(
+        Math.max(scrollY / introScrollDistance, 0),
+        1,
+      );
     };
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      refreshScrollMetrics();
       updateScrollProgress();
     };
 
     const handleScroll = () => {
       updateScrollProgress();
-
-      if (!cueHidden && window.scrollY > 40 && scrollCueRef.current) {
-        scrollCueRef.current.style.opacity = "0";
-        cueHidden = true;
-      }
     };
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -1060,26 +1102,37 @@ export function ParticleHero() {
       mouseY = event.clientY / window.innerHeight - 0.5;
     };
 
+    const easeToward = (current: number, target: number, amount: number) => {
+      const next = current + (target - current) * amount;
+
+      return Math.abs(next - target) < 0.0001 ? target : next;
+    };
+
     const animate = () => {
+      if (!isAnimating) {
+        return;
+      }
+
       animationFrame = requestAnimationFrame(animate);
       clock.update();
       const elapsed = clock.getElapsed();
 
-      scrollProgress +=
-        (targetProgress - scrollProgress) *
-        (reduceMotion ? 1 : FIELD.scrollEase);
-      shapeProgress +=
-        (targetShapeProgress - shapeProgress) *
-        (reduceMotion ? 1 : FIELD.scrollEase);
-      introExitProgress +=
-        (targetIntroExit - introExitProgress) *
-        (reduceMotion ? 1 : FIELD.scrollEase * 1.6);
-
-      const railPct = Math.min(Math.max(scrollProgress, 0), 1);
-
-      if (railFillRef.current) {
-        railFillRef.current.style.height = `${railPct * 100}%`;
-      }
+      scrollProgress = easeToward(
+        scrollProgress,
+        targetProgress,
+        reduceMotion ? 1 : FIELD.scrollEase,
+      );
+      const previousShapeProgress = shapeProgress;
+      shapeProgress = easeToward(
+        shapeProgress,
+        targetShapeProgress,
+        reduceMotion ? 1 : FIELD.scrollEase,
+      );
+      introExitProgress = easeToward(
+        introExitProgress,
+        targetIntroExit,
+        reduceMotion ? 1 : FIELD.scrollEase * 1.6,
+      );
 
       const meshScaled = scrollProgress * (MESH_SCENES.length - 1);
       const meshIndex = Math.min(
@@ -1110,12 +1163,7 @@ export function ParticleHero() {
             meshEased +
           Math.cos(elapsed * 0.12 + index) * 2;
 
-        blob.style.left = `${x}vw`;
-        blob.style.top = `${y}vh`;
-        blob.style.width = `${size}vw`;
-        blob.style.height = `${size}vw`;
-        blob.style.marginLeft = `${-size / 2}vw`;
-        blob.style.marginTop = `${-size / 2}vw`;
+        blob.style.transform = `translate3d(${x}vw, ${y}vh, 0) translate3d(-50%, -50%, 0) scale(${size / 52})`;
         blob.style.background = lerpHex(
           meshStart.colors[index],
           meshEnd.colors[index],
@@ -1131,51 +1179,27 @@ export function ParticleHero() {
       const localT = Math.min(Math.max(scaled - segmentIndex, 0), 1);
       const eased = localT * localT * (3 - 2 * localT);
 
-      lerpShapes(
-        shapes[segmentIndex],
-        shapes[segmentIndex + 1],
-        eased,
-        scratch,
-      );
-
       const introMorph = reduceMotion ? 1 : getIntroMorph(elapsed);
       const introExit = Math.min(introExitProgress, 1);
 
-      if (introExit < 1) {
-        lerpShapes(introDataSphere, shapes[0], introMorph, introScratch);
-        lerpShapes(introScratch, scratch, introExit, scratch);
+      particleUniforms.elapsed.value = elapsed;
+      particleUniforms.introMorph.value = introMorph;
+      particleUniforms.introExit.value = introExit;
+
+      // Shape attributes are only uploaded while the user is actually changing scenes.
+      // Idle drift and the intro morph now happen in the vertex shader.
+      if (shapeProgress !== previousShapeProgress) {
+        lerpShapes(
+          shapes[segmentIndex],
+          shapes[segmentIndex + 1],
+          eased,
+          scratch,
+        );
+
+        const attr = geometry.getAttribute("position") as Three.BufferAttribute;
+        (attr.array as Float32Array).set(scratch);
+        attr.needsUpdate = true;
       }
-
-      const attr = geometry.getAttribute("position") as THREE.BufferAttribute;
-      const array = attr.array as Float32Array;
-
-      if (reduceMotion) {
-        array.set(scratch);
-      } else {
-        for (let i = 0; i < FIELD.particleCount; i++) {
-          const offset = i * 3;
-          const phase = particlePhases[i];
-
-          const baseX = scratch[offset];
-          const baseY = scratch[offset + 1];
-          const baseZ = scratch[offset + 2];
-
-          const drift = FIELD.idleMotion;
-
-          idleScratch[offset] =
-            baseX + Math.sin(elapsed * 0.85 + phase + baseY * 0.4) * drift;
-          idleScratch[offset + 1] =
-            baseY +
-            Math.cos(elapsed * 0.72 + phase * 1.3 + baseZ * 0.3) * drift * 0.8;
-          idleScratch[offset + 2] =
-            baseZ +
-            Math.sin(elapsed * 0.64 + phase * 0.8 + baseX * 0.25) * drift;
-        }
-
-        array.set(idleScratch);
-      }
-
-      attr.needsUpdate = true;
 
       camera.position.x += (mouseX * 1.2 - camera.position.x) * 0.03;
       camera.position.y += (-mouseY * 0.8 - camera.position.y) * 0.03;
@@ -1185,18 +1209,46 @@ export function ParticleHero() {
       renderer.render(scene, camera);
     };
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isAnimating = false;
+        cancelAnimationFrame(animationFrame);
+        return;
+      }
+
+      if (!isAnimating) {
+        isAnimating = true;
+        animate();
+      }
+    };
+
+    // Content changes can alter a stage's height without triggering a window
+    // resize. Keep the scroll-to-shape stops in sync after responsive reflow
+    // and Fast Refresh updates.
+    const layoutObserver = new ResizeObserver(() => {
+      refreshScrollMetrics();
+      updateScrollProgress();
+    });
+
+    stageElements.forEach((stage) => layoutObserver.observe(stage));
+
+    refreshScrollMetrics();
     updateScrollProgress();
-    animate();
+    handleVisibilityChange();
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    return () => {
+    disposeScene = () => {
+      isAnimating = false;
       cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      layoutObserver.disconnect();
 
       scene.remove(points);
       scene.remove(farPoints);
@@ -1208,26 +1260,78 @@ export function ParticleHero() {
       farTexture.dispose();
       renderer.dispose();
     };
+
+    };
+
+    void initialize();
+
+    return () => {
+      disposed = true;
+      disposeScene();
+    };
   }, []);
 
   return (
-    <div className="particle-page">
-      <div className="landing-mesh" aria-hidden="true">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div
-            key={index}
-            ref={(element) => {
-              meshBlobRefs.current[index] = element;
-            }}
-            className="landing-mesh__blob"
-          />
-        ))}
-        <div className="landing-mesh__grain" />
-        <div className="landing-mesh__veil" />
+    <div
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      aria-hidden="true"
+    >
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-brand-navy"
+        aria-hidden="true"
+      >
+        {Array.from({ length: 4 }, (_, index) => {
+          const initialScene = MESH_SCENES[0];
+          const size = initialScene.sizes[index];
+          const x =
+            initialScene.positions[index][0] + Math.sin(index) * 2;
+          const y =
+            initialScene.positions[index][1] + Math.cos(index) * 2;
+
+          return (
+            <div
+              key={index}
+              ref={(element) => {
+                meshBlobRefs.current[index] = element;
+              }}
+              className="fixed left-0 top-0 h-[60vw] w-[60vw] rounded-full opacity-[0.82] blur-[72px]"
+              style={{
+                background: initialScene.colors[index],
+                transform: `translate3d(${x}vw, ${y}vh, 0) translate3d(-50%, -50%, 0) scale(${size / 52})`,
+                willChange: "transform, background-color",
+              }}
+            />
+          );
+        })}
+        <div
+          className="fixed inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+        <div
+          className="fixed inset-0"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(11, 31, 58, 0.72) 0%, rgba(11, 31, 58, 0.24) 54%, rgba(11, 31, 58, 0.48) 100%), radial-gradient(ellipse at center, transparent 30%, rgba(11, 31, 58, 0.42) 100%)",
+          }}
+        />
       </div>
 
-      <canvas ref={canvasRef} className="particle-field" aria-hidden="true" />
-      <div className="particle-vignette" aria-hidden="true" />
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 z-[1] block h-screen w-screen"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none fixed inset-0 z-[2]"
+        style={{
+          background:
+            "radial-gradient(circle at 74% 50%, transparent 0 24%, rgba(11, 31, 58, 0.1) 42%, rgba(11, 31, 58, 0.38) 100%), linear-gradient(180deg, rgba(11, 31, 58, 0.22) 0%, transparent 36%, rgba(11, 31, 58, 0.24) 100%)",
+        }}
+        aria-hidden="true"
+      />
     </div>
   );
 }

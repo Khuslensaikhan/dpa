@@ -15,9 +15,8 @@ const FIELD = {
   farParticleOpacity: 0.35,
   idleMotion: 0.045,
   cameraZ: 9,
-  scrollEase: 0.08,
-  introMorphDuration: 1.5,
-  introHoldDuration: 2,
+  scrollResponse: 5,
+  introMorphDuration: 1.4,
   introScrollExit: 0.55,
 };
 
@@ -849,26 +848,14 @@ function easeInOut(t: number) {
 }
 
 function getIntroMorph(elapsed: number) {
-  const morphDuration = FIELD.introMorphDuration;
-  const holdDuration = FIELD.introHoldDuration;
-  const cycleDuration = holdDuration * 2 + morphDuration * 2;
-  const cycleTime = elapsed % cycleDuration;
+  const delay = 0.25;
 
-  if (cycleTime < holdDuration) {
+  if (elapsed <= delay) {
     return 0;
   }
 
-  if (cycleTime < holdDuration + morphDuration) {
-    return easeInOut((cycleTime - holdDuration) / morphDuration);
-  }
-
-  if (cycleTime < holdDuration * 2 + morphDuration) {
-    return 1;
-  }
-
-  return (
-    1 -
-    easeInOut((cycleTime - holdDuration * 2 - morphDuration) / morphDuration)
+  return easeInOut(
+    Math.min((elapsed - delay) / FIELD.introMorphDuration, 1),
   );
 }
 
@@ -1045,6 +1032,7 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
     const clock = new THREE.Timer();
     let animationFrame = 0;
     let isAnimating = false;
+    let hasRenderedFirstFrame = false;
     let lastFrameAt = -Infinity;
     let scrollProgress = 0;
     let targetProgress = 0;
@@ -1157,7 +1145,13 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
       mouseY = event.clientY / window.innerHeight - 0.5;
     };
 
-    const easeToward = (current: number, target: number, amount: number) => {
+    const easeToward = (
+      current: number,
+      target: number,
+      response: number,
+      deltaSeconds: number,
+    ) => {
+      const amount = 1 - Math.exp(-response * deltaSeconds);
       const next = current + (target - current) * amount;
 
       return Math.abs(next - target) < 0.0001 ? target : next;
@@ -1174,6 +1168,9 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
         return;
       }
 
+      const deltaSeconds = Number.isFinite(lastFrameAt)
+        ? Math.min(now - lastFrameAt, 64) / 1000
+        : 1 / 60;
       lastFrameAt = now;
 
       if (hasPendingScrollUpdate) {
@@ -1187,17 +1184,20 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
       scrollProgress = easeToward(
         scrollProgress,
         targetProgress,
-        reduceMotion ? 1 : FIELD.scrollEase,
+        reduceMotion ? Number.POSITIVE_INFINITY : FIELD.scrollResponse,
+        deltaSeconds,
       );
       shapeProgress = easeToward(
         shapeProgress,
         targetShapeProgress,
-        reduceMotion ? 1 : FIELD.scrollEase,
+        reduceMotion ? Number.POSITIVE_INFINITY : FIELD.scrollResponse,
+        deltaSeconds,
       );
       introExitProgress = easeToward(
         introExitProgress,
         targetIntroExit,
-        reduceMotion ? 1 : FIELD.scrollEase * 1.6,
+        reduceMotion ? Number.POSITIVE_INFINITY : FIELD.scrollResponse * 1.6,
+        deltaSeconds,
       );
 
       const meshScaled = scrollProgress * (MESH_SCENES.length - 1);
@@ -1277,6 +1277,11 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
       camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
+
+      if (!hasRenderedFirstFrame) {
+        hasRenderedFirstFrame = true;
+        canvas.style.opacity = "1";
+      }
     };
 
     const startAnimation = () => {
@@ -1398,7 +1403,7 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
 
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 z-[1] block h-screen w-screen"
+        className="fixed inset-0 z-[1] block h-screen w-screen opacity-0 transition-opacity duration-[240ms] ease-[cubic-bezier(0.23,1,0.32,1)]"
         aria-hidden="true"
       />
       <div

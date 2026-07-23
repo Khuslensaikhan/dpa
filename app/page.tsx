@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { EngagementProcessSection } from "./components/EngagementProcessSection";
-import { ParticleHero } from "./components/ParticleHero";
+import { ParticleHeroGate } from "./components/ParticleHeroGate";
 import { HeroSection } from "./components/HeroSection";
 import { ServiceCardsSection } from "./components/ServiceCardsSection";
 import { SiteFooter } from "./components/SiteFooter";
@@ -85,7 +85,7 @@ const processStepLayouts: Array<{
 export default function Home() {
   return (
     <div className="relative min-h-[600dvh] bg-brand-navy text-brand-ivory max-[1023px]:min-h-0">
-      <ParticleHero />
+      <ParticleHeroGate />
       <SiteHeader services={services} />
 
       <main className="relative z-10">

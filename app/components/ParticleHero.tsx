@@ -6,8 +6,6 @@ import type * as Three from "three";
 type ThreeModule = typeof import("three");
 
 const FIELD = {
-  particleCount: 10000,
-  farParticleCount: 1000,
   backgroundColor: "#0B1F3A",
   particleColor: "#ffffff",
   farParticleColor: "#ffffff",
@@ -21,8 +19,61 @@ const FIELD = {
   introMorphDuration: 1.5,
   introHoldDuration: 2,
   introScrollExit: 0.55,
-  maxPixelRatio: 2,
 };
+
+type RenderProfile = {
+  farParticleCount: number;
+  farParticleOpacity: number;
+  farParticleSize: number;
+  frameInterval: number;
+  maxPixelRatio: number;
+  particleCount: number;
+  particleOpacity: number;
+  particleSize: number;
+  trackPointer: boolean;
+};
+
+function getRenderProfile(): RenderProfile {
+  if (window.innerWidth < 768) {
+    return {
+      particleCount: 7000,
+      farParticleCount: 700,
+      maxPixelRatio: 1,
+      frameInterval: 1000 / 60,
+      particleSize: 0.068,
+      farParticleSize: 0.036,
+      particleOpacity: 0.96,
+      farParticleOpacity: 0.42,
+      trackPointer: false,
+    };
+  }
+
+  if (window.innerWidth < 1024) {
+    return {
+      particleCount: 8000,
+      farParticleCount: 800,
+      maxPixelRatio: 1.5,
+      frameInterval: 1000 / 60,
+      particleSize: 0.06,
+      farParticleSize: 0.032,
+      particleOpacity: 0.92,
+      farParticleOpacity: 0.38,
+      trackPointer: false,
+    };
+  }
+
+  return {
+    particleCount: 10000,
+    farParticleCount: 1000,
+    maxPixelRatio: 2,
+    frameInterval: 1000 / 60,
+    particleSize: FIELD.particleSize,
+    farParticleSize: FIELD.farParticleSize,
+    particleOpacity: FIELD.particleOpacity,
+    farParticleOpacity: FIELD.farParticleOpacity,
+    trackPointer: true,
+  };
+}
 
 // World-space X offsets: positive moves right, negative moves left.
 const SHAPE_X_OFFSETS = [3, -3, 3, -3, 3, -3, 3];
@@ -858,6 +909,7 @@ export function ParticleHero() {
       const reduceMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
       ).matches;
+      const renderProfile = getRenderProfile();
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(
       55,
@@ -877,22 +929,22 @@ export function ParticleHero() {
       });
 
       renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio, FIELD.maxPixelRatio),
+        Math.min(window.devicePixelRatio, renderProfile.maxPixelRatio),
       );
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setClearColor(FIELD.backgroundColor, 0);
 
       const shapes = [
-      shapeDatabaseCylinder(FIELD.particleCount),
-      shapeBeehive(FIELD.particleCount),
-      shapeSpiderWeb(FIELD.particleCount),
-      shapeTreeRings(FIELD.particleCount),
-      shapeAntColony(FIELD.particleCount),
-      shapeTree(FIELD.particleCount),
-      shapeMilkyWay(FIELD.particleCount),
+      shapeDatabaseCylinder(renderProfile.particleCount),
+      shapeBeehive(renderProfile.particleCount),
+      shapeSpiderWeb(renderProfile.particleCount),
+      shapeTreeRings(renderProfile.particleCount),
+      shapeAntColony(renderProfile.particleCount),
+      shapeTree(renderProfile.particleCount),
+      shapeMilkyWay(renderProfile.particleCount),
       ].map((shape, index) => offsetShape(shape, SHAPE_X_OFFSETS[index]));
       const introDataSphere = offsetShape(
-        shapeNeuralCore(FIELD.particleCount),
+        shapeNeuralCore(renderProfile.particleCount),
         SHAPE_X_OFFSETS[0],
       );
 
@@ -904,7 +956,7 @@ export function ParticleHero() {
         new THREE.BufferAttribute(introDataSphere, 3),
       );
 
-      const particlePhases = new Float32Array(FIELD.particleCount);
+      const particlePhases = new Float32Array(renderProfile.particleCount);
 
       for (let i = 0; i < particlePhases.length; i++) {
         particlePhases[i] = Math.random() * Math.PI * 2;
@@ -917,13 +969,13 @@ export function ParticleHero() {
 
       const dotTexture = makeDotTexture(THREE);
       const material = new THREE.PointsMaterial({
-      size: FIELD.particleSize,
+      size: renderProfile.particleSize,
       map: dotTexture,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       color: new THREE.Color(FIELD.particleColor),
-      opacity: FIELD.particleOpacity,
+      opacity: renderProfile.particleOpacity,
       });
       const particleUniforms = {
         elapsed: { value: 0 },
@@ -962,9 +1014,9 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
       scene.add(points);
 
     const farGeometry = new THREE.BufferGeometry();
-    const farPosition = new Float32Array(FIELD.farParticleCount * 3);
+    const farPosition = new Float32Array(renderProfile.farParticleCount * 3);
 
-    for (let i = 0; i < FIELD.farParticleCount; i++) {
+    for (let i = 0; i < renderProfile.farParticleCount; i++) {
       farPosition[i * 3] = (Math.random() - 0.5) * 30;
       farPosition[i * 3 + 1] = (Math.random() - 0.5) * 30;
       farPosition[i * 3 + 2] = (Math.random() - 0.5) * 30 - 8;
@@ -977,30 +1029,33 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
 
     const farTexture = makeDotTexture(THREE);
     const farMaterial = new THREE.PointsMaterial({
-      size: FIELD.farParticleSize,
+      size: renderProfile.farParticleSize,
       map: farTexture,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       color: new THREE.Color(FIELD.farParticleColor),
-      opacity: FIELD.farParticleOpacity,
+      opacity: renderProfile.farParticleOpacity,
     });
     const farPoints = new THREE.Points(farGeometry, farMaterial);
     scene.add(farPoints);
 
     const segmentCount = shapes.length - 1;
-    const scratch = new Float32Array(FIELD.particleCount * 3);
+    const scratch = new Float32Array(renderProfile.particleCount * 3);
     const clock = new THREE.Timer();
     let animationFrame = 0;
     let isAnimating = false;
+    let lastFrameAt = -Infinity;
     let scrollProgress = 0;
     let targetProgress = 0;
     let shapeProgress = 0;
     let targetShapeProgress = 0;
+    let lastUploadedShapeProgress = Number.NaN;
     let introExitProgress = 0;
     let targetIntroExit = 0;
     let mouseX = 0;
     let mouseY = 0;
+    let hasPendingScrollUpdate = false;
     const stageElements = Array.from(
       document.querySelectorAll<HTMLElement>(".particle-stage"),
     );
@@ -1094,7 +1149,7 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
     };
 
     const handleScroll = () => {
-      updateScrollProgress();
+      hasPendingScrollUpdate = true;
     };
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -1108,12 +1163,24 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
       return Math.abs(next - target) < 0.0001 ? target : next;
     };
 
-    const animate = () => {
+    const animate = (now: number) => {
       if (!isAnimating) {
         return;
       }
 
       animationFrame = requestAnimationFrame(animate);
+
+      if (now - lastFrameAt < renderProfile.frameInterval) {
+        return;
+      }
+
+      lastFrameAt = now;
+
+      if (hasPendingScrollUpdate) {
+        updateScrollProgress();
+        hasPendingScrollUpdate = false;
+      }
+
       clock.update();
       const elapsed = clock.getElapsed();
 
@@ -1122,7 +1189,6 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
         targetProgress,
         reduceMotion ? 1 : FIELD.scrollEase,
       );
-      const previousShapeProgress = shapeProgress;
       shapeProgress = easeToward(
         shapeProgress,
         targetShapeProgress,
@@ -1188,7 +1254,10 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
 
       // Shape attributes are only uploaded while the user is actually changing scenes.
       // Idle drift and the intro morph now happen in the vertex shader.
-      if (shapeProgress !== previousShapeProgress) {
+      if (
+        Number.isNaN(lastUploadedShapeProgress) ||
+        shapeProgress !== lastUploadedShapeProgress
+      ) {
         lerpShapes(
           shapes[segmentIndex],
           shapes[segmentIndex + 1],
@@ -1199,6 +1268,7 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
         const attr = geometry.getAttribute("position") as Three.BufferAttribute;
         (attr.array as Float32Array).set(scratch);
         attr.needsUpdate = true;
+        lastUploadedShapeProgress = shapeProgress;
       }
 
       camera.position.x += (mouseX * 1.2 - camera.position.x) * 0.03;
@@ -1209,6 +1279,12 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
       renderer.render(scene, camera);
     };
 
+    const startAnimation = () => {
+      isAnimating = true;
+      lastFrameAt = -Infinity;
+      animationFrame = requestAnimationFrame(animate);
+    };
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         isAnimating = false;
@@ -1217,8 +1293,7 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
       }
 
       if (!isAnimating) {
-        isAnimating = true;
-        animate();
+        startAnimation();
       }
     };
 
@@ -1238,7 +1313,9 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("mousemove", handleMouseMove);
+    if (renderProfile.trackPointer) {
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    }
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     disposeScene = () => {

@@ -1,15 +1,10 @@
-"use client";
-
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
-import type { RefObject } from "react";
 import type { Service } from "../data/site";
 
 type ServiceCardMedia = {
   imageSrc?: string;
-  videoSrc?: string;
   alt: string;
   variant: "strategy" | "analytics" | "research" | "training" | "proposal";
 };
@@ -53,13 +48,9 @@ const cardLayout = [
 function ServiceHoverMedia({
   media,
   service,
-  title,
-  videoRef,
 }: {
   media: ServiceCardMedia;
   service: Service;
-  title: string;
-  videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   return (
     <div className="service-card-media" data-variant={media.variant}>
@@ -69,7 +60,8 @@ function ServiceHoverMedia({
           src={media.imageSrc}
           alt={media.alt}
           fill
-          sizes="(max-width: 840px) 100vw, 42vw"
+          sizes="(max-width: 1023px) 100vw, (max-width: 1440px) 42vw, 35vw"
+          quality={60}
         />
       ) : (
         <div className="service-card-placeholder" role="img" aria-label={media.alt}>
@@ -78,20 +70,6 @@ function ServiceHoverMedia({
           <span />
         </div>
       )}
-
-      {media.videoSrc ? (
-        <video
-          ref={videoRef}
-          className="service-card-video"
-          src={media.videoSrc}
-          poster={media.imageSrc}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-label={`${title} video preview`}
-        />
-      ) : null}
 
       <div className="service-card-content">
         <span className="service-card-signal">{service.signal}</span>
@@ -111,46 +89,17 @@ function ServiceCard({
   service: Service;
   index: number;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const media = mediaBySlug[service.slug];
-
-  const playPreview = () => {
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-      !videoRef.current
-    ) {
-      return;
-    }
-
-    videoRef.current.currentTime = 0;
-    videoRef.current.playbackRate = 1.55;
-    void videoRef.current.play();
-  };
-
-  const stopPreview = () => {
-    if (!videoRef.current) {
-      return;
-    }
-
-    videoRef.current.pause();
-    videoRef.current.currentTime = 0;
-  };
 
   return (
     <Link
       className={`service-card group ${cardLayout[index] ?? "lg:col-span-4"}`}
       href={`/services/${service.slug}`}
       aria-label={`Explore ${service.title}`}
-      onBlur={stopPreview}
-      onFocus={playPreview}
-      onMouseEnter={playPreview}
-      onMouseLeave={stopPreview}
     >
       <ServiceHoverMedia
         media={media}
         service={service}
-        title={service.title}
-        videoRef={videoRef}
       />
     </Link>
   );

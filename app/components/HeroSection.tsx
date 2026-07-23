@@ -28,7 +28,7 @@ export function HeroSection() {
           aria-label="Hero actions"
         >
           <Link
-            className="inline-flex min-h-11 min-w-42 items-center justify-center rounded bg-brand-teal px-5 text-sm font-semibold leading-none whitespace-nowrap text-brand-navy transition hover:-translate-y-px hover:bg-brand-white hover:!text-brand-navy active:translate-y-px max-[1023px]:flex-1 max-[520px]:w-full max-[520px]:flex-none"
+            className="inline-flex min-h-11 min-w-42 items-center justify-center rounded bg-brand-teal px-5 text-sm font-semibold leading-none whitespace-nowrap !text-brand-navy transition hover:-translate-y-px hover:bg-brand-white hover:!text-brand-navy active:translate-y-px max-[1023px]:flex-1 max-[520px]:w-full max-[520px]:flex-none"
             href="/contact"
           >
             Book a Call

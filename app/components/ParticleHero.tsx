@@ -29,6 +29,7 @@ type RenderProfile = {
   particleCount: number;
   particleOpacity: number;
   particleSize: number;
+  revealDuration: number;
   trackPointer: boolean;
 };
 
@@ -43,6 +44,7 @@ function getRenderProfile(): RenderProfile {
       farParticleSize: 0.036,
       particleOpacity: 0.96,
       farParticleOpacity: 0.42,
+      revealDuration: 420,
       trackPointer: false,
     };
   }
@@ -57,6 +59,7 @@ function getRenderProfile(): RenderProfile {
       farParticleSize: 0.032,
       particleOpacity: 0.92,
       farParticleOpacity: 0.38,
+      revealDuration: 300,
       trackPointer: false,
     };
   }
@@ -70,6 +73,7 @@ function getRenderProfile(): RenderProfile {
     farParticleSize: FIELD.farParticleSize,
     particleOpacity: FIELD.particleOpacity,
     farParticleOpacity: FIELD.farParticleOpacity,
+    revealDuration: 240,
     trackPointer: true,
   };
 }
@@ -1031,9 +1035,11 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
     const scratch = new Float32Array(renderProfile.particleCount * 3);
     const clock = new THREE.Timer();
     let animationFrame = 0;
+    let canvasReveal: Animation | undefined;
     let isAnimating = false;
     let hasRenderedFirstFrame = false;
     let lastFrameAt = -Infinity;
+    let revealFrame = 0;
     let scrollProgress = 0;
     let targetProgress = 0;
     let shapeProgress = 0;
@@ -1280,7 +1286,22 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
 
       if (!hasRenderedFirstFrame) {
         hasRenderedFirstFrame = true;
-        canvas.style.opacity = "1";
+        revealFrame = requestAnimationFrame(() => {
+          revealFrame = requestAnimationFrame(() => {
+            if (disposed) {
+              return;
+            }
+
+            canvasReveal = canvas.animate(
+              [{ opacity: 0 }, { opacity: 1 }],
+              {
+                duration: renderProfile.revealDuration,
+                easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+                fill: "forwards",
+              },
+            );
+          });
+        });
       }
     };
 
@@ -1326,6 +1347,8 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
     disposeScene = () => {
       isAnimating = false;
       cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(revealFrame);
+      canvasReveal?.cancel();
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("mousemove", handleMouseMove);
@@ -1355,7 +1378,7 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[1] overflow-hidden"
       aria-hidden="true"
     >
       <div
@@ -1403,7 +1426,7 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
 
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 z-[1] block h-screen w-screen opacity-0 transition-opacity duration-[240ms] ease-[cubic-bezier(0.23,1,0.32,1)]"
+        className="fixed inset-0 z-[1] block h-screen w-screen opacity-0"
         aria-hidden="true"
       />
       <div

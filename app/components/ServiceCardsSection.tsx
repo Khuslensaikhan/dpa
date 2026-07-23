@@ -2,9 +2,11 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import Link from "next/link";
 import type { Service } from "../data/site";
+import { ServiceCardPreviewVideo } from "./ServiceCardPreviewVideo";
 
 type ServiceCardMedia = {
   imageSrc?: string;
+  videoSrc?: string;
   alt: string;
   variant: "strategy" | "analytics" | "research" | "training" | "proposal";
 };
@@ -12,27 +14,32 @@ type ServiceCardMedia = {
 const mediaBySlug: Record<string, ServiceCardMedia> = {
   "data-strategy-roadmap": {
     alt: "Strategy roadmap preview",
-    imageSrc: "/Data Strategy & Roadmap.png",
+    imageSrc: "/Data Strategy & Roadmap.jpeg",
+    videoSrc: "/service-preview-3.mp4",
     variant: "strategy",
   },
   "advanced-analytics-business-intelligence": {
     alt: "Analytics workspace preview",
-    imageSrc: "/Advanced Analytics & Business Intelligence.png",
+    imageSrc: "/Advanced Analytics & Business Intelligence.jpeg",
+    videoSrc: "/service-preview-2.mp4",
     variant: "analytics",
   },
   "social-media-digital-research": {
     alt: "Digital research preview",
-    imageSrc: "/Social Media & Digital Research.png",
+    imageSrc: "/Social Media & Digital Research.jpeg",
+    videoSrc: "/service-preview-4.mp4",
     variant: "research",
   },
   training: {
     alt: "Team training preview",
-    imageSrc: "/Training.png",
+    imageSrc: "/Training.jpeg",
+    videoSrc: "/service-preview-5.mp4",
     variant: "training",
   },
   "proposal-rfp-support": {
     alt: "Proposal support preview",
-    imageSrc: "/Proposal & RFP Support.png",
+    imageSrc: "/Proposal & RFP Support.jpeg",
+    videoSrc: "/service-preview-1.mp4",
     variant: "proposal",
   },
 };
@@ -46,9 +53,11 @@ const cardLayout = [
 ];
 
 function ServiceHoverMedia({
+  imageSizes,
   media,
   service,
 }: {
+  imageSizes: string;
   media: ServiceCardMedia;
   service: Service;
 }) {
@@ -60,8 +69,8 @@ function ServiceHoverMedia({
           src={media.imageSrc}
           alt={media.alt}
           fill
-          sizes="(max-width: 1023px) 100vw, (max-width: 1440px) 42vw, 35vw"
-          quality={60}
+          sizes={imageSizes}
+          quality={50}
         />
       ) : (
         <div className="service-card-placeholder" role="img" aria-label={media.alt}>
@@ -70,6 +79,8 @@ function ServiceHoverMedia({
           <span />
         </div>
       )}
+
+      {media.videoSrc ? <ServiceCardPreviewVideo videoSrc={media.videoSrc} /> : null}
 
       <div className="service-card-content">
         <span className="service-card-signal">{service.signal}</span>
@@ -90,14 +101,18 @@ function ServiceCard({
   index: number;
 }) {
   const media = mediaBySlug[service.slug];
+  const imageSizes =
+    index === 0
+      ? "(max-width: 1023px) 100vw, 80vw"
+      : "(max-width: 1023px) 100vw, (max-width: 1440px) 42vw, 35vw";
 
   return (
     <Link
       className={`service-card group ${cardLayout[index] ?? "lg:col-span-4"}`}
       href={`/services/${service.slug}`}
-      aria-label={`Explore ${service.title}`}
     >
       <ServiceHoverMedia
+        imageSizes={imageSizes}
         media={media}
         service={service}
       />

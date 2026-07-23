@@ -86,6 +86,7 @@ export default function Home() {
   return (
     <div className="relative min-h-[600dvh] bg-brand-navy text-brand-ivory max-[1023px]:min-h-0">
       <ParticleHeroGate />
+      <div className="mobile-mesh-backdrop" aria-hidden="true" />
       <SiteHeader services={services} />
 
       <main className="relative z-10">
@@ -147,10 +148,10 @@ export default function Home() {
 
               <div className="who-work-list" role="list" aria-label="Organization sectors">
                 {partnerSectors.map((sector) => (
-                  <article className="who-work-row" key={sector.title} role="listitem">
+                  <div className="who-work-row" key={sector.title} role="listitem">
                     <h3>{sector.title}</h3>
                     <p>{sector.body}</p>
-                  </article>
+                  </div>
                 ))}
               </div>
             </div>
@@ -177,7 +178,7 @@ export default function Home() {
                   const layout = processStepLayouts[index] ?? processStepLayouts[0];
 
                   return (
-                    <article
+                    <div
                       className="process-flow-step"
                       data-position={layout.position}
                       key={step.title}
@@ -187,7 +188,7 @@ export default function Home() {
                       <Icon className="process-flow-icon" size={30} weight="duotone" aria-hidden="true" />
                       <h3>{step.title}</h3>
                       <p>{step.body}</p>
-                    </article>
+                    </div>
                   );
                 })}
               </div>
@@ -216,7 +217,7 @@ export default function Home() {
               aria-label="Contact actions"
             >
               <a
-                className="inline-flex min-h-11 min-w-42 items-center justify-center rounded bg-brand-teal px-5 text-sm font-semibold leading-none text-brand-navy no-underline whitespace-nowrap transition hover:-translate-y-px hover:bg-brand-white hover:!text-brand-navy active:translate-y-px max-[1023px]:flex-1 max-[520px]:w-full max-[520px]:flex-none"
+                className="inline-flex min-h-11 min-w-42 items-center justify-center rounded bg-brand-teal px-5 text-sm font-semibold leading-none !text-brand-navy no-underline whitespace-nowrap transition hover:-translate-y-px hover:bg-brand-white hover:!text-brand-navy active:translate-y-px max-[1023px]:flex-1 max-[520px]:w-full max-[520px]:flex-none"
                 href="mailto:hello@datapoweranalytics.com"
               >
                 Book a Call

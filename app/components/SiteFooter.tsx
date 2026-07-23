@@ -66,11 +66,12 @@ export function SiteFooter() {
             aria-label="Data Power Analytics home"
           >
             <Image
-              className="h-[3.42rem] w-[3.85rem]"
+              className="h-[3.42rem] w-auto"
               src="/dpa logo.png"
               alt=""
-              width={100}
-              height={100}
+              width={897}
+              height={766}
+              quality={50}
             />
           </Link>
           <p className="type-small-body mt-5 max-w-[31rem] text-brand-ivory/72">

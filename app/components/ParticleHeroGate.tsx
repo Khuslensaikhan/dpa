@@ -26,6 +26,7 @@ export function ParticleHeroGate() {
       if (window.innerWidth < 1024) return "tablet";
       return "desktop";
     };
+    let activeRenderKey = getRenderKey();
     const getStartDelay = () => {
       if (window.innerWidth < 768) return 3_500;
       if (window.innerWidth < 1024) return 2_800;
@@ -42,7 +43,7 @@ export function ParticleHeroGate() {
     };
     const scheduleScene = () => {
       clearScheduledStart();
-      setRenderKey(getRenderKey());
+      setRenderKey(activeRenderKey);
       setIsReady(false);
 
       if (reducedMotionQuery.matches) {
@@ -61,14 +62,27 @@ export function ParticleHeroGate() {
         setIsReady(true);
       }, getStartDelay());
     };
+    const handleResize = () => {
+      const nextRenderKey = getRenderKey();
+
+      // Mobile browsers emit resize events while their address bar expands or
+      // collapses during scroll. Only recreate the WebGL scene when its actual
+      // quality tier changes.
+      if (nextRenderKey === activeRenderKey) {
+        return;
+      }
+
+      activeRenderKey = nextRenderKey;
+      scheduleScene();
+    };
 
     scheduleScene();
-    window.addEventListener("resize", scheduleScene, { passive: true });
+    window.addEventListener("resize", handleResize, { passive: true });
     reducedMotionQuery.addEventListener("change", scheduleScene);
 
     return () => {
       clearScheduledStart();
-      window.removeEventListener("resize", scheduleScene);
+      window.removeEventListener("resize", handleResize);
       reducedMotionQuery.removeEventListener("change", scheduleScene);
     };
   }, []);

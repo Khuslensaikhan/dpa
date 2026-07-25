@@ -395,6 +395,656 @@ summary {
   background: linear-gradient(90deg, #2aa8b8, #c9a24b);
 }
 
+/* Service pages place the supplied previews at the centre of the first impression. */
+.service-detail-hero,
+.services-video-hero {
+  position: relative;
+  display: grid;
+  min-height: min(100dvh, 52rem);
+  overflow: hidden;
+  isolation: isolate;
+  background: #06213f;
+}
+
+.service-detail-hero-video,
+.services-video-hero-video {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.service-detail-hero-scrim,
+.services-video-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgb(11 31 58 / 0.96) 0%, rgba(11, 31, 58, 0.607) 43%, rgba(11, 31, 58, 0) 100%),
+    linear-gradient(0deg, rgb(11 31 58 / 0.66) 0%, transparent 46%);
+}
+
+.service-detail-hero-content,
+.services-video-hero-content {
+  display: flex;
+  min-height: min(100dvh, 52rem);
+  align-items: end;
+}
+
+.services-video-hero {
+  min-height: min(92dvh, 48rem);
+}
+
+.services-video-hero-content {
+  min-height: min(92dvh, 48rem);
+}
+
+@media (max-width: 767px) {
+  .service-detail-hero,
+  .services-video-hero,
+  .service-detail-hero-content,
+  .services-video-hero-content {
+    min-height: min(46rem, 100dvh);
+  }
+
+  .service-detail-hero-scrim,
+  .services-video-hero-scrim {
+    background:
+      linear-gradient(90deg, rgb(11 31 58 / 0.9), rgb(11 31 58 / 0.7)),
+      linear-gradient(0deg, rgb(11 31 58 / 0.78) 0%, transparent 55%);
+  }
+}
+
+.service-detail-hero-image {
+  position: relative;
+  min-height: clamp(18rem, 33vw, 29rem);
+  overflow: hidden;
+  border: 1px solid rgb(247 246 242 / 0.15);
+  border-radius: 0.75rem;
+  background: rgb(5 37 71 / 0.42);
+  box-shadow: 0 28px 80px rgb(0 0 0 / 0.26);
+}
+
+.service-detail-hero-image::after,
+.service-related-card::after,
+.service-knowledge-image::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(135deg, rgb(11 31 58 / 0.08), rgb(11 31 58 / 0.58));
+  pointer-events: none;
+}
+
+.service-detail-hero-image img {
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.service-detail-hero-image:hover img {
+  transform: scale(1.035);
+}
+
+.service-challenge {
+  max-width: 64rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.service-challenge .type-body {
+  font-size: clamp(1.2rem, 1.8vw, 1.65rem);
+  line-height: 1.55;
+}
+
+.service-approach-visual {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(247 246 242 / 0.14);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(circle at 10% 10%, rgb(42 168 184 / 0.22), transparent 33%),
+    radial-gradient(circle at 88% 90%, rgb(201 162 75 / 0.16), transparent 36%),
+    rgb(5 37 71 / 0.48);
+  box-shadow:
+    inset 0 1px 0 rgb(247 246 242 / 0.1),
+    0 24px 72px rgb(0 0 0 / 0.2);
+}
+
+.service-approach-visual::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgb(247 246 242 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(247 246 242 / 0.08) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem;
+  mask-image: linear-gradient(135deg, black, transparent 94%);
+  pointer-events: none;
+}
+
+.service-approach-decision,
+.service-approach-outcome {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgb(247 246 242 / 0.16);
+  border-radius: 999px;
+  background: rgb(11 31 58 / 0.66);
+  color: rgb(247 246 242 / 0.9);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.service-approach-decision {
+  margin: 1.25rem auto 0;
+  padding: 0.62rem 0.85rem;
+}
+
+.service-approach-paths {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.3rem;
+}
+
+.service-approach-path {
+  min-height: 11.25rem;
+  border: 1px solid rgb(247 246 242 / 0.14);
+  border-radius: 0.55rem;
+  background: rgb(5 37 71 / 0.68);
+  padding: 1.2rem;
+}
+
+.service-approach-path-marker {
+  display: inline-flex;
+  min-width: 1.85rem;
+  min-height: 1.85rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(42 168 184 / 0.45);
+  border-radius: 999px;
+  background: rgb(42 168 184 / 0.12);
+  padding: 0 0.5rem;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.service-approach-path h3,
+.service-capability-card h3,
+.service-engagement-step h3 {
+  margin: 1rem 0 0;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  line-height: 1.22;
+}
+
+.service-approach-path p,
+.service-capability-card p,
+.service-engagement-step p {
+  margin: 0.62rem 0 0;
+  color: rgb(247 246 242 / 0.72);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.service-approach-outcome {
+  margin: 0 auto 1.35rem;
+  border-color: rgb(201 162 75 / 0.5);
+  background: rgb(201 162 75 / 0.16);
+  padding: 0.66rem 0.9rem;
+  color: #ffffff;
+}
+
+.service-approach-split .service-approach-paths {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  padding: 0;
+  background: rgb(247 246 242 / 0.14);
+}
+
+.service-approach-split {
+  width: min(100%, 86rem);
+  margin: 0 auto;
+}
+
+.service-approach-split .service-approach-path {
+  display: flex;
+  position: relative;
+  min-height: 30rem;
+  flex-direction: column;
+  isolation: isolate;
+  border: 0;
+  border-radius: 0;
+  padding: clamp(1.75rem, 4vw, 4rem);
+}
+
+.service-approach-split .service-approach-path::before {
+  position: absolute;
+  right: -8%;
+  bottom: -11%;
+  z-index: -1;
+  width: 72%;
+  aspect-ratio: 1;
+  content: "";
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.44;
+  pointer-events: none;
+}
+
+.service-approach-split .service-approach-path:first-child::before {
+  background-image: url("/Diagnostic scoping.png");
+}
+
+.service-approach-split .service-approach-path:last-child::before {
+  background-image: url("/Research and analysis.png");
+}
+
+.service-approach-split .service-approach-path h3 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.4vw, 2.25rem);
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+.service-approach-split .service-approach-path ul {
+  display: grid;
+  gap: 0.85rem;
+  margin: 2.5rem 0 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+  color: rgb(247 246 242 / 0.82);
+  font-size: clamp(1rem, 1.4vw, 1.22rem);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.service-approach-split .service-approach-path li::marker {
+  color: #2aa8b8;
+}
+
+.service-approach-split .service-approach-path:last-child li::marker {
+  color: #c9a24b;
+}
+
+.service-approach-path-outcome {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: auto;
+  color: #ffffff;
+  font-size: clamp(1rem, 1.45vw, 1.25rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.service-approach-split .service-approach-path:first-child {
+  background: linear-gradient(145deg, rgb(42 168 184 / 0.2), rgb(5 37 71 / 0.72) 62%);
+}
+
+.service-approach-split .service-approach-path:last-child {
+  background: linear-gradient(145deg, rgb(201 162 75 / 0.19), rgb(5 37 71 / 0.72) 62%);
+}
+
+.service-approach-split .service-approach-path:last-child .service-approach-path-marker {
+  border-color: rgb(201 162 75 / 0.56);
+  background: rgb(201 162 75 / 0.14);
+}
+
+.service-approach-sequence .service-approach-paths,
+.service-approach-cycle .service-approach-paths {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.service-approach-sequence .service-approach-path {
+  position: relative;
+}
+
+.service-approach-sequence .service-approach-path:not(:last-child)::after {
+  position: absolute;
+  top: 3rem;
+  right: -0.75rem;
+  z-index: 2;
+  width: 0.75rem;
+  height: 1px;
+  content: "";
+  background: rgb(42 168 184 / 0.7);
+}
+
+.service-approach-cycle .service-approach-paths {
+  padding: 1.6rem;
+}
+
+.service-approach-cycle .service-approach-path:nth-child(2) {
+  transform: translateY(1.25rem);
+}
+
+.service-approach-cycle .service-approach-path:nth-child(3) {
+  border-color: rgb(201 162 75 / 0.33);
+}
+
+.service-capability-card {
+  position: relative;
+  min-height: 12rem;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgb(247 246 242 / 0.12);
+  border-radius: 0.55rem;
+  background: rgb(5 37 71 / 0.44);
+  padding: 1.35rem;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    transform 0.25s ease;
+}
+
+.service-capability-card::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background: radial-gradient(circle at 100% 0%, rgb(42 168 184 / 0.2), transparent 48%);
+}
+
+.service-capability-card::after {
+  position: absolute;
+  right: -2.25rem;
+  bottom: -2.25rem;
+  z-index: -1;
+  width: 9rem;
+  aspect-ratio: 1;
+  content: "";
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.service-capability-card-0::before {
+  background: linear-gradient(145deg, rgb(42 168 184 / 0.32), rgb(5 37 71 / 0.2) 62%);
+}
+
+.service-capability-card-0::after {
+  width: 12rem;
+  background-image: url("/Diagnostic scoping.png");
+}
+
+.service-capability-card-1::before {
+  background: linear-gradient(145deg, rgb(30 124 140 / 0.25), transparent 58%);
+}
+
+.service-capability-card-2::before {
+  background: linear-gradient(145deg, rgb(31 122 84 / 0.3), transparent 58%);
+}
+
+.service-capability-card-2::after {
+  width: 11.5rem;
+  background-image: url("/Research and analysis.png");
+}
+
+.service-capability-card-3::before {
+  background: linear-gradient(145deg, rgb(201 162 75 / 0.22), transparent 58%);
+}
+
+.service-capability-card-4::before {
+  background: linear-gradient(145deg, rgb(42 168 184 / 0.24), rgb(31 122 84 / 0.14) 62%);
+}
+
+.service-capability-card-4::after {
+  background-image: url("/Research and analysis.png");
+}
+
+.service-capability-card-5::before {
+  background: linear-gradient(145deg, rgb(201 162 75 / 0.2), rgb(42 168 184 / 0.12) 65%);
+}
+
+.service-capability-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border: 1px solid rgb(247 246 242 / 0.18);
+  border-radius: 999px;
+  background: rgb(5 37 71 / 0.42);
+  color: #2aa8b8;
+}
+
+.service-capability-card-2 .service-capability-icon,
+.service-capability-card-5 .service-capability-icon {
+  color: #c9a24b;
+}
+
+.service-capability-card:hover {
+  border-color: rgb(42 168 184 / 0.48);
+  background: rgb(42 168 184 / 0.1);
+  transform: translateY(-2px);
+}
+
+.service-capability-card h3 {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+}
+
+.service-capability-card h3 {
+  margin-top: 1.35rem;
+}
+
+.service-capability-card p {
+  position: relative;
+  z-index: 1;
+}
+
+.service-engagement-step {
+  display: grid;
+  grid-template-columns: 2.3rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  border: 1px solid rgb(247 246 242 / 0.12);
+  border-radius: 0.55rem;
+  background: rgb(5 37 71 / 0.38);
+  padding: 1.25rem;
+}
+
+.service-engagement-step:nth-child(3n + 1) {
+  background: linear-gradient(110deg, rgb(42 168 184 / 0.15), rgb(5 37 71 / 0.38) 46%);
+}
+
+.service-engagement-step:nth-child(3n + 2) {
+  background: linear-gradient(110deg, rgb(31 122 84 / 0.17), rgb(5 37 71 / 0.38) 46%);
+}
+
+.service-engagement-step:nth-child(3n) {
+  background: linear-gradient(110deg, rgb(201 162 75 / 0.14), rgb(5 37 71 / 0.38) 46%);
+}
+
+.service-engagement-step > span {
+  display: grid;
+  width: 2.3rem;
+  height: 2.3rem;
+  place-items: center;
+  border: 1px solid rgb(42 168 184 / 0.45);
+  border-radius: 999px;
+  background: rgb(42 168 184 / 0.12);
+  color: #ffffff;
+}
+
+.service-engagement-step h3 {
+  margin-top: 0.1rem;
+}
+
+.service-deliverables,
+.service-final-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 92% 10%, rgb(201 162 75 / 0.14), transparent 34%),
+    rgb(5 37 71 / 0.5);
+  box-shadow: inset 0 1px 0 rgb(247 246 242 / 0.08);
+}
+
+.service-deliverables::before {
+  position: absolute;
+  right: -3rem;
+  bottom: -9rem;
+  z-index: -1;
+  width: min(38vw, 31rem);
+  aspect-ratio: 1;
+  content: "";
+  background: url("/Proposal and project plan.jpeg") center / contain no-repeat;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.service-deliverables > * {
+  position: relative;
+  z-index: 1;
+}
+
+.service-deliverables ul li {
+  display: flex;
+  min-height: 5.1rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.55rem;
+  background: rgb(247 246 242 / 0.055);
+  padding: 1rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.service-deliverables ul li:nth-child(4n + 1) {
+  background: rgb(42 168 184 / 0.12);
+}
+
+.service-deliverables ul li:nth-child(4n + 2) {
+  background: rgb(31 122 84 / 0.13);
+}
+
+.service-deliverables ul li:nth-child(4n + 3) {
+  background: rgb(201 162 75 / 0.12);
+}
+
+.service-deliverables ul li svg {
+  flex: 0 0 auto;
+  color: #c9a24b;
+}
+
+.service-contact-cta {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 82% 50%, rgb(42 168 184 / 0.22), transparent 32%),
+    linear-gradient(90deg, transparent, rgb(31 122 84 / 0.09));
+}
+
+.service-knowledge-transfer {
+  background: rgb(5 37 71 / 0.5);
+  box-shadow: inset 0 1px 0 rgb(247 246 242 / 0.08);
+}
+
+.service-knowledge-image {
+  position: relative;
+  min-height: 22rem;
+  background: rgb(42 168 184 / 0.12);
+}
+
+.service-knowledge-image img {
+  object-fit: cover;
+}
+
+.service-related-card {
+  position: relative;
+  display: flex;
+  min-height: 13rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid rgb(247 246 242 / 0.13);
+  border-radius: 0.55rem;
+  padding: 1.25rem;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-decoration: none;
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.service-related-card:hover {
+  border-color: rgb(42 168 184 / 0.58);
+  transform: translateY(-2px);
+}
+
+.service-related-card img {
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.service-related-card:hover img {
+  transform: scale(1.05);
+}
+
+.service-related-card span,
+.service-related-card svg {
+  position: relative;
+  z-index: 1;
+}
+
+.service-related-card svg {
+  flex: 0 0 auto;
+  color: #c9a24b;
+}
+
+@media (max-width: 767px) {
+  .service-approach-split .service-approach-paths,
+  .service-approach-sequence .service-approach-paths,
+  .service-approach-cycle .service-approach-paths {
+    grid-template-columns: 1fr;
+  }
+
+  .service-approach-sequence .service-approach-path:not(:last-child)::after {
+    top: auto;
+    right: auto;
+    bottom: -0.75rem;
+    left: 2.15rem;
+    width: 1px;
+    height: 0.75rem;
+  }
+
+  .service-approach-cycle .service-approach-path:nth-child(2) {
+    transform: none;
+  }
+
+  .service-approach-split .service-approach-path {
+    min-height: 23rem;
+    padding: 1.75rem;
+  }
+
+  .service-knowledge-image {
+    min-height: 17rem;
+  }
+}
+
 .service-card-grid {
   width: 100%;
   overflow: hidden;

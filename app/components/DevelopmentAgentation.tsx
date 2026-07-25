@@ -8,9 +8,9 @@ const Agentation = dynamic(
 );
 
 export function DevelopmentAgentation() {
-  // Keep the development annotation tool opt-in. Its own controls are not
-  // part of the site UI and add a sizeable client bundle to local audits.
-  if (process.env.NEXT_PUBLIC_ENABLE_AGENTATION !== "true") {
+  // Keep the annotation controls out of the public site while making them
+  // immediately available during local development.
+  if (process.env.NODE_ENV !== "development") {
     return null;
   }
 

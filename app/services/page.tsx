@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
-import {
-  CTASection,
-  InnerPageShell,
-  PageHero,
-  SectionHeader,
-} from "../components/PageScaffold";
+import { CTASection, InnerPageShell, SectionHeader } from "../components/PageScaffold";
 import { services } from "../data/site";
 
 export const metadata: Metadata = {
@@ -18,32 +13,48 @@ export const metadata: Metadata = {
 export default function ServicesPage() {
   return (
     <InnerPageShell meshVariant="green">
-      <PageHero
-        kicker="Services"
-        title="Practical data work for decisions that matter."
-        body="Choose the service that fits your immediate question, or combine them into a focused roadmap."
-      >
-        <blockquote className="glass-panel m-0 max-w-[48rem] rounded-lg border border-brand-ivory/12 p-6 text-[clamp(1.25rem,2.2vw,2rem)] font-semibold leading-[1.18] text-brand-white">
-          The best data work reduces uncertainty where a team is about to make a real choice.
-        </blockquote>
-      </PageHero>
+      <section className="services-video-hero">
+        <video
+          aria-hidden="true"
+          autoPlay
+          className="services-video-hero-video"
+          loop
+          muted
+          playsInline
+          poster="/Data Strategy & Roadmap.jpeg"
+          preload="metadata"
+        >
+          <source src="/service-preview-3.mp4" type="video/mp4" />
+        </video>
+        <div className="services-video-hero-scrim" aria-hidden="true" />
+        <div className="services-video-hero-content px-[clamp(1.25rem,7vw,7rem)] pb-16 pt-32 max-[1023px]:px-5 max-[1023px]:pt-28">
+          <div className="max-w-[46rem]">
+            <p className="type-kicker mb-4 border-l-2 border-brand-teal pl-3 uppercase text-brand-ivory/86">
+              Services
+            </p>
+            <h1 className="type-page-title m-0 max-w-[13ch] text-brand-white">
+              Practical data work for decisions that matter.
+            </h1>
+            <p className="type-body mt-6 max-w-[37rem] text-brand-ivory/82">
+              Choose the support your team needs now, then connect it into a practical data system.
+            </p>
+          </div>
+        </div>
+      </section>
 
-      <section className="px-[clamp(1.25rem,7vw,7rem)] py-14 max-[1023px]:px-5">
+      <section className="px-[clamp(1.25rem,7vw,7rem)] py-16 max-[1023px]:px-5">
         <SectionHeader
-          title="Five ways to make the work useful."
-          body="Each service is designed to produce clear next actions, not just analysis for its own sake."
+          title="Find the right path forward."
+          body="Each service starts with a real question and ends with clear evidence, a stronger capability, or a practical next move."
         />
         <div className="mt-10 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          {services.map((service, index) => (
+          {services.map((service) => (
             <Link
               className="group rounded-lg border border-brand-ivory/12 bg-brand-navy/44 p-5 text-brand-ivory no-underline backdrop-blur-xl transition hover:-translate-y-1 hover:border-brand-teal/55 hover:bg-brand-ivory/[0.065] first:lg:row-span-2 first:lg:p-7"
               href={`/services/${service.slug}`}
               key={service.slug}
             >
-              <span className="text-sm font-semibold text-brand-gold">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <h2 className="type-card-title mt-4 max-w-[18rem] text-brand-white">
+              <h2 className="type-card-title max-w-[18rem] text-brand-white">
                 {service.title}
               </h2>
               <p className="type-small-body mt-4 max-w-[34rem] text-brand-ivory/72">

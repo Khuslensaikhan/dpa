@@ -21,6 +21,7 @@ const FIELD = {
 };
 
 type RenderProfile = {
+  animateBackdrop: boolean;
   farParticleCount: number;
   farParticleOpacity: number;
   farParticleSize: number;
@@ -36,16 +37,20 @@ type RenderProfile = {
 function getRenderProfile(): RenderProfile {
   if (window.innerWidth < 768) {
     return {
-      particleCount: 7000,
-      farParticleCount: 700,
-      maxPixelRatio: 1,
+      // The hero stays fully interactive on phones, but this tier protects
+      // scroll responsiveness on GPUs that struggle with transparent sprites.
+      // A slightly larger point size keeps the lower-density shape legible.
+      particleCount: 2200,
+      farParticleCount: 0,
+      maxPixelRatio: 0.8,
       frameInterval: 1000 / 60,
-      particleSize: 0.068,
-      farParticleSize: 0.036,
+      particleSize: 0.08,
+      farParticleSize: 0,
       particleOpacity: 0.96,
-      farParticleOpacity: 0.42,
+      farParticleOpacity: 0,
       revealDuration: 420,
       trackPointer: false,
+      animateBackdrop: false,
     };
   }
 
@@ -61,6 +66,7 @@ function getRenderProfile(): RenderProfile {
       farParticleOpacity: 0.38,
       revealDuration: 300,
       trackPointer: false,
+      animateBackdrop: true,
     };
   }
 
@@ -75,6 +81,7 @@ function getRenderProfile(): RenderProfile {
     farParticleOpacity: FIELD.farParticleOpacity,
     revealDuration: 240,
     trackPointer: true,
+    animateBackdrop: true,
   };
 }
 
@@ -1206,42 +1213,44 @@ transformed.z += sin(elapsed * 0.64 + particlePhase * 0.8 + basePosition.x * 0.2
         deltaSeconds,
       );
 
-      const meshScaled = scrollProgress * (MESH_SCENES.length - 1);
-      const meshIndex = Math.min(
-        Math.max(Math.floor(meshScaled), 0),
-        MESH_SCENES.length - 2,
-      );
-      const meshT = Math.min(Math.max(meshScaled - meshIndex, 0), 1);
-      const meshEased = easeInOut(meshT);
-      const meshStart = MESH_SCENES[meshIndex];
-      const meshEnd = MESH_SCENES[meshIndex + 1];
-
-      meshBlobRefs.current.forEach((blob, index) => {
-        if (!blob) {
-          return;
-        }
-
-        const size =
-          meshStart.sizes[index] +
-          (meshEnd.sizes[index] - meshStart.sizes[index]) * meshEased;
-        const x =
-          meshStart.positions[index][0] +
-          (meshEnd.positions[index][0] - meshStart.positions[index][0]) *
-            meshEased +
-          Math.sin(elapsed * 0.15 + index) * 2;
-        const y =
-          meshStart.positions[index][1] +
-          (meshEnd.positions[index][1] - meshStart.positions[index][1]) *
-            meshEased +
-          Math.cos(elapsed * 0.12 + index) * 2;
-
-        blob.style.transform = `translate3d(${x}vw, ${y}vh, 0) translate3d(-50%, -50%, 0) scale(${size / 52})`;
-        blob.style.background = lerpHex(
-          meshStart.colors[index],
-          meshEnd.colors[index],
-          meshEased,
+      if (renderProfile.animateBackdrop) {
+        const meshScaled = scrollProgress * (MESH_SCENES.length - 1);
+        const meshIndex = Math.min(
+          Math.max(Math.floor(meshScaled), 0),
+          MESH_SCENES.length - 2,
         );
-      });
+        const meshT = Math.min(Math.max(meshScaled - meshIndex, 0), 1);
+        const meshEased = easeInOut(meshT);
+        const meshStart = MESH_SCENES[meshIndex];
+        const meshEnd = MESH_SCENES[meshIndex + 1];
+
+        meshBlobRefs.current.forEach((blob, index) => {
+          if (!blob) {
+            return;
+          }
+
+          const size =
+            meshStart.sizes[index] +
+            (meshEnd.sizes[index] - meshStart.sizes[index]) * meshEased;
+          const x =
+            meshStart.positions[index][0] +
+            (meshEnd.positions[index][0] - meshStart.positions[index][0]) *
+              meshEased +
+            Math.sin(elapsed * 0.15 + index) * 2;
+          const y =
+            meshStart.positions[index][1] +
+            (meshEnd.positions[index][1] - meshStart.positions[index][1]) *
+              meshEased +
+            Math.cos(elapsed * 0.12 + index) * 2;
+
+          blob.style.transform = `translate3d(${x}vw, ${y}vh, 0) translate3d(-50%, -50%, 0) scale(${size / 52})`;
+          blob.style.background = lerpHex(
+            meshStart.colors[index],
+            meshEnd.colors[index],
+            meshEased,
+          );
+        });
+      }
 
       const scaled = shapeProgress * segmentCount;
       const segmentIndex = Math.min(

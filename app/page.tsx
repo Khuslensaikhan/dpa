@@ -216,12 +216,12 @@ export default function Home() {
               className="mt-8 flex w-fit max-w-full flex-wrap gap-3 max-[1023px]:w-full"
               aria-label="Contact actions"
             >
-              <a
+              <Link
                 className="inline-flex min-h-11 min-w-42 items-center justify-center rounded bg-brand-teal px-5 text-sm font-semibold leading-none !text-brand-navy no-underline whitespace-nowrap transition hover:-translate-y-px hover:bg-brand-white hover:!text-brand-navy active:translate-y-px max-[1023px]:flex-1 max-[520px]:w-full max-[520px]:flex-none"
-                href="mailto:hello@datapoweranalytics.com"
+                href="/contact"
               >
                 Book a Call
-              </a>
+              </Link>
               <Link
                 className="glass-button inline-flex min-h-11 min-w-42 items-center justify-center rounded px-5 text-sm font-semibold leading-none text-brand-white no-underline whitespace-nowrap transition hover:-translate-y-px hover:border-brand-ivory/55 hover:bg-brand-ivory/12 active:translate-y-px max-[1023px]:flex-1 max-[520px]:w-full max-[520px]:flex-none"
                 href="/services"

@@ -12,7 +12,7 @@ const engagementModules = [
   },
   {
     title: "Proposal and project plan",
-    image: "/Proposal and project plan.png",
+    image: "/Proposal and project plan.jpeg",
   },
   {
     title: "Research and analysis",

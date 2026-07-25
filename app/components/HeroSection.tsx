@@ -11,9 +11,6 @@ export function HeroSection() {
         className="pointer-events-auto w-full max-w-[43rem]"
         aria-labelledby="hero-title"
       >
-        <p className="type-kicker mb-4 inline-flex w-fit border-l-2 border-brand-teal pl-3 uppercase text-brand-ivory/86">
-          Data systems for sharper decisions
-        </p>
         <h1
           className="type-hero-title m-0 max-w-[11ch] text-brand-white max-[1023px]:max-w-[10ch]"
           id="hero-title"

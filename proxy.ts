@@ -9,7 +9,6 @@ export function proxy(request: NextRequest) {
 // rewritten to the holding page without removing their source files.
 export const config = {
   matcher: [
-    "/about/:path*",
     "/approach/:path*",
     "/how-we-work/:path*",
     "/privacy-policy/:path*",

@@ -1072,9 +1072,11 @@ summary {
     filter 0.28s ease;
 }
 
-.service-card:hover {
-  filter: saturate(1.08) contrast(1.04);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover {
+    filter: saturate(1.08) contrast(1.04);
+    transform: translateY(-2px);
+  }
 }
 
 .service-card:active {
@@ -1142,9 +1144,14 @@ summary {
   opacity: 0 !important;
 }
 
-.service-card:hover .service-card-video,
 .service-card:focus-within .service-card-video {
   opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover .service-card-video {
+    opacity: 1;
+  }
 }
 
 .service-card-placeholder {
@@ -1177,9 +1184,14 @@ summary {
   transform: translateX(-100%);
 }
 
-.service-card:hover .service-card-placeholder::after,
 .service-card:focus-within .service-card-placeholder::after {
   opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover .service-card-placeholder::after {
+    opacity: 1;
+  }
 }
 
 .service-card-placeholder span {
@@ -1293,13 +1305,19 @@ summary {
     transform 0.28s ease;
 }
 
-.service-card:hover .service-card-action,
 .service-card:focus-within .service-card-action {
   background: rgb(42 168 184 / 0.82);
   transform: translateX(0.18rem);
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover .service-card-action {
+    background: rgb(42 168 184 / 0.82);
+    transform: translateX(0.18rem);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .service-card:hover .service-card-placeholder::after,
   .service-card:focus-within .service-card-placeholder::after {
     animation: service-card-scan 0.72s linear infinite;

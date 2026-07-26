@@ -4,9 +4,20 @@ import { useEffect, useRef, useState } from "react";
 
 export function ServiceCardPreviewVideo({ videoSrc }: { videoSrc: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [canHover, setCanHover] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const hoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const updateCanHover = () => setCanHover(hoverQuery.matches);
+
+    updateCanHover();
+    hoverQuery.addEventListener("change", updateCanHover);
+
+    return () => hoverQuery.removeEventListener("change", updateCanHover);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -22,10 +33,6 @@ export function ServiceCardPreviewVideo({ videoSrc }: { videoSrc: string }) {
   }, [hasLoaded, isPreviewing]);
 
   const startPreview = () => {
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      return;
-    }
-
     setHasLoaded(true);
     setIsPreviewing(true);
   };
@@ -49,8 +56,8 @@ export function ServiceCardPreviewVideo({ videoSrc }: { videoSrc: string }) {
   return (
     <div
       className="service-card-video-trigger"
-      onPointerEnter={startPreview}
-      onPointerLeave={stopPreview}
+      onPointerEnter={canHover ? startPreview : undefined}
+      onPointerLeave={canHover ? stopPreview : undefined}
     >
       <video
         ref={videoRef}
